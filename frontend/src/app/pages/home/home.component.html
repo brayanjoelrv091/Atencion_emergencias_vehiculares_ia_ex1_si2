@@ -1,0 +1,60 @@
+<div class="wrap">
+  <header class="top">
+    <h1>RutAIGeoProxi</h1>
+    <button type="button" class="link" (click)="logout()">Cerrar sesión</button>
+  </header>
+
+  @if (loadError) {
+    <p class="err">{{ loadError }}</p>
+  }
+
+  @if (me) {
+    <section class="card">
+      <h2>Tu perfil</h2>
+      <p><strong>Nombre:</strong> {{ me.name }}</p>
+      <p><strong>Correo:</strong> {{ me.email }}</p>
+      <p><strong>Rol:</strong> {{ me.role }}</p>
+      @if (isAdmin) {
+        <p><a routerLink="/admin-users" class="btn-admin">Ir al Panel de Administración</a></p>
+      }
+    </section>
+
+    @if (isCliente) {
+      <section class="card">
+        <h2>Vehículos</h2>
+        @if (vehicleError) {
+          <p class="err">{{ vehicleError }}</p>
+        }
+        <ul>
+          @for (v of me.vehicles; track v.id) {
+            <li>
+              {{ v.brand }} {{ v.model }} — {{ v.license_plate }}
+              @if (v.year) {
+                ({{ v.year }})
+              }
+              <button type="button" class="link danger" (click)="removeVehicle(v)">Eliminar</button>
+            </li>
+          } @empty {
+            <li>Sin vehículos registrados.</li>
+          }
+        </ul>
+        <h3>Agregar vehículo</h3>
+        <form [formGroup]="vehicleForm" (ngSubmit)="addVehicle()">
+          <div class="row">
+            <input placeholder="Marca" formControlName="brand" />
+            <input placeholder="Modelo" formControlName="model" />
+          </div>
+          <div class="row">
+            <input placeholder="Placa" formControlName="license_plate" />
+            <input type="number" placeholder="Año" formControlName="year" />
+          </div>
+          <button type="submit" [disabled]="vehicleForm.invalid">Guardar</button>
+        </form>
+      </section>
+    } @else {
+      <p class="hint">En Ciclo 1, la gestión de vehículos en API es solo para rol <strong>cliente</strong>.</p>
+    }
+  }
+
+  <p class="hint"><a routerLink="/login">Ir a login</a></p>
+</div>

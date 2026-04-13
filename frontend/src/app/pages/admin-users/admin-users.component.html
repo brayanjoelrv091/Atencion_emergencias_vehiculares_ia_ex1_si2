@@ -1,0 +1,48 @@
+<div class="admin-wrap">
+  <div class="header">
+    <h2>Administración de Usuarios y Roles</h2>
+    <button (click)="loadUsers()">Refrescar</button>
+  </div>
+
+  <div *ngIf="loading" class="load">Cargando usuarios...</div>
+  <div *ngIf="error" class="err">{{ error }}</div>
+
+  <table *ngIf="!loading && !error">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Permisos</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let user of users">
+        <td>{{ user.id }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ user.email }}</td>
+        <td>
+          <select [ngModel]="user.role" (ngModelChange)="changeRole(user, $event)">
+            <option *ngFor="let r of roles" [value]="r">{{ r | titlecase }}</option>
+          </select>
+        </td>
+        <td>
+          <button class="btn-sm" (click)="openPermissions(user)">Editar JSON</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Modal Permisos -->
+  <div class="modal" *ngIf="editingUser">
+    <div class="modal-content">
+      <h3>Editar Permisos: {{ editingUser.name }}</h3>
+      <textarea [(ngModel)]="newPermissionsStr" rows="10"></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="editingUser = null">Cancelar</button>
+        <button class="btn-save" (click)="savePermissions()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>

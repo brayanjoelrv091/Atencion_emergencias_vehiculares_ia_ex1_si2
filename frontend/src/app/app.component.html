@@ -1,0 +1,8 @@
+<nav class="nav">
+  <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">Inicio</a>
+  @if (!isLoggedIn()) {
+    <a routerLink="/login" routerLinkActive="active">Login</a>
+    <a routerLink="/register" routerLinkActive="active">Registro</a>
+  }
+</nav>
+<router-outlet />
