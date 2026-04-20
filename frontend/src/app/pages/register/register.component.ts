@@ -19,14 +19,18 @@ export class RegisterComponent {
   ok = false;
 
   form = this.fb.nonNullable.group({
-    name: ['', Validators.required],
+    nombre: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [
+      Validators.required, 
+      Validators.minLength(8), 
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$/)
+    ]],
   });
 
   submit(): void {
     if (this.form.invalid) return;
-    const { name, email, password } = this.form.getRawValue();
+    const { nombre: name, email, password } = this.form.getRawValue();
     this.error = '';
     this.ok = false;
     this.auth.register(name, email, password).subscribe({

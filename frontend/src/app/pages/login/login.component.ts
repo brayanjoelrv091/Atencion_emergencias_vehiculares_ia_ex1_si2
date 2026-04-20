@@ -23,12 +23,19 @@ export class LoginComponent {
   });
 
   submit(): void {
+    Object.values(this.form.controls).forEach(c => c.markAsTouched());
     if (this.form.invalid) return;
     const { email, password } = this.form.getRawValue();
     this.error = '';
     this.auth.login(email, password).subscribe({
       next: () => void this.router.navigate(['/home']),
-      error: () => (this.error = 'Credenciales incorrectas o cuenta inactiva.'),
+      error: (err) => {
+        if(err.error && err.error.detail) {
+          this.error = err.error.detail;
+        } else {
+          this.error = 'Credenciales incorrectas o cuenta inactiva.';
+        }
+      },
     });
   }
 }

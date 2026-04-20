@@ -19,7 +19,7 @@ export class AdminUsersComponent implements OnInit {
   editingUser: Me | null = null;
   newPermissionsStr = '';
 
-  roles = ['admin', 'taller', 'tecnico', 'cliente'];
+  roles = ['admin', 'taller', 'cliente'];
 
   ngOnInit(): void {
     this.loadUsers();
@@ -40,7 +40,7 @@ export class AdminUsersComponent implements OnInit {
   }
 
   changeRole(user: Me, newRole: string): void {
-    if (user.role === newRole) return;
+    if (user.rol === newRole) return;
     
     this.auth.updateUserRole(user.id, newRole).subscribe({
       next: (updated) => {
@@ -55,7 +55,7 @@ export class AdminUsersComponent implements OnInit {
 
   openPermissions(user: Me): void {
     this.editingUser = user;
-    this.newPermissionsStr = JSON.stringify(user.permissions || {}, null, 2);
+    this.newPermissionsStr = JSON.stringify(user.permisos || {}, null, 2);
   }
 
   savePermissions(): void {

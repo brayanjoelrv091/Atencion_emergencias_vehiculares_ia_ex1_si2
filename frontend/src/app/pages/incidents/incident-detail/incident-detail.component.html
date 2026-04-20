@@ -1,0 +1,83 @@
+<div class="tech-bg"></div>
+<div class="page-container">
+  @if (error) { <div class="error-box">{{ error }}</div> }
+
+  @if (detail) {
+    <h1 class="neon-title">Ficha del Incidente #{{ detail.id }}</h1>
+    <p class="subtitle">CU9 · Ficha Técnica Estructurada</p>
+
+    <div class="detail-grid">
+      <!-- Info General -->
+      <section class="glass-card">
+        <h2 class="section-title">📋 Información General</h2>
+        <div class="info-row"><span>Título:</span> <strong>{{ detail.titulo }}</strong></div>
+        <div class="info-row"><span>Estado:</span> <span class="badge">{{ detail.estado }}</span></div>
+        <div class="info-row"><span>Categoría:</span> {{ detail.categoria || 'Sin clasificar' }}</div>
+        <div class="info-row"><span>Severidad:</span> {{ detail.severidad || 'Sin determinar' }}</div>
+        <div class="info-row"><span>Fecha:</span> {{ detail.creado_en | slice:0:19 }}</div>
+        @if (detail.descripcion) {
+          <div class="info-row"><span>Descripción:</span> {{ detail.descripcion }}</div>
+        }
+      </section>
+
+      <!-- Ubicación -->
+      <section class="glass-card">
+        <h2 class="section-title">📍 Ubicación GPS</h2>
+        <div class="info-row"><span>Latitud:</span> {{ detail.latitud }}</div>
+        <div class="info-row"><span>Longitud:</span> {{ detail.longitud }}</div>
+        @if (detail.direccion) {
+          <div class="info-row"><span>Dirección:</span> {{ detail.direccion }}</div>
+        }
+      </section>
+
+      <!-- Clasificación IA -->
+      @if (detail.clasificacion) {
+        <section class="glass-card ia-card">
+          <h2 class="section-title">🤖 Clasificación IA (CU8)</h2>
+          <div class="info-row"><span>Categoría:</span> <strong>{{ detail.clasificacion.categoria }}</strong></div>
+          <div class="info-row"><span>Severidad:</span> <strong>{{ detail.clasificacion.severidad }}</strong></div>
+          <div class="info-row"><span>Confianza:</span> {{ (detail.clasificacion.confianza * 100).toFixed(1) }}%</div>
+          <div class="info-row"><span>Método:</span> {{ detail.clasificacion.metodo }}</div>
+          @if (detail.clasificacion.razonamiento) {
+            <div class="reasoning">{{ detail.clasificacion.razonamiento }}</div>
+          }
+        </section>
+      }
+
+      <!-- Medios -->
+      @if (detail.medios.length > 0) {
+        <section class="glass-card">
+          <h2 class="section-title">📎 Archivos Adjuntos</h2>
+          <div class="media-grid">
+            @for (m of detail.medios; track m.id) {
+              <div class="media-item">
+                @if (m.tipo_medio === 'foto') {
+                  <img [src]="m.url_archivo" alt="Foto incidente" class="media-img" />
+                } @else {
+                  <audio controls [src]="m.url_archivo" class="media-audio"></audio>
+                }
+                <small>{{ m.tipo_medio }} · {{ m.subido_en | slice:0:10 }}</small>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Asignación -->
+      @if (assignment) {
+        <section class="glass-card assign-card">
+          <h2 class="section-title">🏪 Taller Asignado (CU14)</h2>
+          <div class="info-row"><span>Taller ID:</span> {{ assignment.taller_id }}</div>
+          <div class="info-row"><span>Distancia:</span> {{ assignment.distancia_km }} km</div>
+          <div class="info-row"><span>Puntaje:</span> {{ assignment.puntaje }}</div>
+          <div class="info-row"><span>Método:</span> {{ assignment.metodo }}</div>
+          @if (assignment.razonamiento) {
+            <div class="reasoning">{{ assignment.razonamiento }}</div>
+          }
+        </section>
+      }
+    </div>
+
+    <a routerLink="/incidents" class="back-link">← Volver a Mis Incidentes</a>
+  }
+</div>

@@ -1,39 +1,108 @@
+"""
+RutAIGeoProxi — API Backend (Monolito Modular).
+
+Entry point que registra todos los módulos y configura el servidor.
+
+Arquitectura:
+    P1 · Usuarios y Seguridad     (CU1-CU6)   ✅ Implementado
+    P2 · Gestión de Incidentes     (CU7-CU9)   ✅ Implementado
+    P3 · Gestión de Talleres       (CU10-CU13)  ✅ Implementado
+    P4 · Asignación y Logística    (CU14)       ✅ Implementado
+    P5 · Pagos y Notificaciones    (CU15-CU18)  📋 Estructura lista
+    P6 · Reportes                  (CU19-CU20)  📋 Estructura lista
+"""
+
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import admin_users, auth, profile
 from app.core.config import settings
 from app.core.database import Base, SessionLocal, engine
 from app.core.security import get_password_hash
-from app.models import PasswordResetToken, RevokedToken, User, Vehicle  # noqa: F401 — registra tablas
 
+# ── Importar modelos de TODOS los módulos para que SQLAlchemy los registre ──
+from app.modules.p1_usuarios.models import (  # noqa: F401
+    TokenRecuperacion,
+    TokenRevocado,
+    Usuario,
+    Vehiculo,
+)
+from app.modules.p2_incidentes.models import (  # noqa: F401
+    ClasificacionIncidente,
+    Incidente,
+    IncidenteMedia,
+)
+from app.modules.p3_talleres.models import (  # noqa: F401
+    SolicitudServicio,
+    Taller,
+    Tecnico,
+)
+from app.modules.p4_asignacion.models import Asignacion  # noqa: F401
+
+# ── Importar routers de módulos ──
+from app.modules.p1_usuarios.routes import admin_router, auth_router, profile_router
+from app.modules.p2_incidentes.routes import router as incidents_router
+from app.modules.p3_talleres.routes import router as workshops_router
+from app.modules.p4_asignacion.routes import router as assignments_router
+from app.modules.p5_pagos.routes import router as payments_router
+from app.modules.p6_reportes.routes import router as reports_router
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# LIFESPAN (startup / shutdown)
+# ═══════════════════════════════════════════════════════════════════════
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    """Crea tablas y seed del admin al iniciar."""
+    logger.info("🚀 Creando tablas en la base de datos...")
     Base.metadata.create_all(bind=engine)
+    logger.info("✅ Tablas creadas/verificadas")
+
+    # Seed del administrador
     if settings.ADMIN_EMAIL and settings.ADMIN_PASSWORD:
         db = SessionLocal()
         try:
-            if not db.query(User).filter(User.email == settings.ADMIN_EMAIL).first():
+            if not db.query(Usuario).filter(Usuario.email == settings.ADMIN_EMAIL).first():
                 db.add(
-                    User(
-                        name="Administrador",
+                    Usuario(
+                        nombre="Administrador",
                         email=settings.ADMIN_EMAIL,
                         hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
-                        role="admin",
-                        is_active=True,
+                        rol="admin",
+                        esta_activo=True,
                     )
                 )
                 db.commit()
+                logger.info(f"👤 Admin seed creado: {settings.ADMIN_EMAIL}")
         finally:
             db.close()
+
+    # Crear directorio de uploads si no existe
+    settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
     yield
+    logger.info("🛑 Servidor detenido")
 
 
-app = FastAPI(title="RutAIGeoProxi API", lifespan=lifespan)
+# ═══════════════════════════════════════════════════════════════════════
+# APP
+# ═══════════════════════════════════════════════════════════════════════
 
+app = FastAPI(
+    title="RutAIGeoProxi API",
+    description="Red de Asistencia Técnica Vehicular Inteligente — Monolito Modular",
+    version="2.0.0",
+    lifespan=lifespan,
+)
+
+# ── CORS ──
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -42,23 +111,64 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-app.include_router(admin_users.router)
-app.include_router(profile.router)
+# ── Servir archivos estáticos (uploads locales) ──
+if settings.UPLOAD_DIR.exists():
+    app.mount("/uploads", StaticFiles(directory=str(settings.UPLOAD_DIR)), name="uploads")
+
+# ── Registrar routers de módulos ──
+# P1: Usuarios y Seguridad
+app.include_router(auth_router)
+app.include_router(admin_router)
+app.include_router(profile_router)
+# P2: Incidentes
+app.include_router(incidents_router)
+# P3: Talleres
+app.include_router(workshops_router)
+# P4: Asignación
+app.include_router(assignments_router)
+# P5: Pagos (placeholder)
+app.include_router(payments_router)
+# P6: Reportes (placeholder)
+app.include_router(reports_router)
 
 
-@app.get("/")
+# ── Root endpoint ──
+@app.get("/", tags=["Sistema"])
 def root():
-    """Ciclo 1: CU-01 a CU-06 (auth, admin, perfil y vehículos del cliente)."""
+    """Mapa de la API por ciclo y caso de uso."""
     return {
-        "message": "RutAIGeoProxi API",
-        "ciclo_1": {
-            "CU-01_inicio_sesion": "POST /auth/login",
-            "CU-02_cierre_sesion": "POST /auth/logout",
-            "CU-03_registro": "POST /auth/register | POST /admin/users",
-            "CU-04_recuperar_password": "POST /auth/forgot-password | POST /auth/reset-password",
-            "CU-05_roles_permisos": "GET /admin/users | PATCH /admin/users/{id}/role | .../permissions",
-            "CU-06_usuario_vehiculo": "GET/PATCH /me | /me/vehicles",
+        "api": "RutAIGeoProxi",
+        "version": "2.0.0",
+        "arquitectura": "Monolito Modular",
+        "modulos": {
+            "P1_usuarios_seguridad": {
+                "estado": "✅ Implementado",
+                "CU1_inicio_sesion": "POST /auth/login",
+                "CU2_cierre_sesion": "POST /auth/logout",
+                "CU3_registro": "POST /auth/register",
+                "CU4_recuperar_password": "POST /auth/forgot-password + /auth/reset-password",
+                "CU5_roles_permisos": "GET/POST /admin/users, PATCH /admin/users/{id}/role|permissions",
+                "CU6_usuario_vehiculo": "GET/PATCH /me, GET/POST/PATCH/DELETE /me/vehicles",
+            },
+            "P2_incidentes": {
+                "estado": "✅ Implementado",
+                "CU7_reportar_incidente": "POST /incidents (multipart: fotos+audio+GPS)",
+                "CU8_clasificacion_ia": "POST /incidents/{id}/classify (YOLOv8+Whisper+Reglas)",
+                "CU9_ficha_incidente": "GET /incidents/{id}",
+            },
+            "P3_talleres": {
+                "estado": "✅ Implementado",
+                "CU10_registrar_taller": "POST /workshops + POST /workshops/{id}/technicians",
+                "CU11_solicitudes": "GET /workshops/{id}/requests",
+                "CU12_actualizar_estado": "PATCH /workshops/requests/{id}/status",
+                "CU13_historial": "GET /workshops/{id}/history",
+            },
+            "P4_asignacion": {
+                "estado": "✅ Implementado",
+                "CU14_asignacion_automatica": "POST /assignments/auto/{incident_id} (Haversine+Multi-criterio)",
+            },
+            "P5_pagos": {"estado": "📋 Estructura lista — Ciclo 3"},
+            "P6_reportes": {"estado": "📋 Estructura lista — Ciclo 3"},
         },
-        "openapi": "/docs",
+        "docs": "/docs",
     }

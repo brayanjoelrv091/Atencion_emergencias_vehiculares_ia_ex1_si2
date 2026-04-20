@@ -1,48 +1,80 @@
-<div class="admin-wrap">
-  <div class="header">
-    <h2>Administración de Usuarios y Roles</h2>
-    <button (click)="loadUsers()">Refrescar</button>
-  </div>
+<div class="tech-bg"></div>
 
-  <div *ngIf="loading" class="load">Cargando usuarios...</div>
-  <div *ngIf="error" class="err">{{ error }}</div>
+<div class="admin-container fade-in">
+  <header class="admin-header">
+    <h1 class="tech-font cyan-text">PANEL DE CONTROL</h1>
+    <p class="subtitle">Gestión de Roles y Permisos — Ciclo 1</p>
+    <div class="header-actions">
+      <button class="btn-premium small" (click)="loadUsers()">Refrescar</button>
+      <a routerLink="/home" class="btn-back">← Volver</a>
+    </div>
+  </header>
 
-  <table *ngIf="!loading && !error">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Email</th>
-        <th>Rol</th>
-        <th>Permisos</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let user of users">
-        <td>{{ user.id }}</td>
-        <td>{{ user.name }}</td>
-        <td>{{ user.email }}</td>
-        <td>
-          <select [ngModel]="user.role" (ngModelChange)="changeRole(user, $event)">
-            <option *ngFor="let r of roles" [value]="r">{{ r | titlecase }}</option>
-          </select>
-        </td>
-        <td>
-          <button class="btn-sm" (click)="openPermissions(user)">Editar JSON</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <main class="admin-main">
+    @if (loading) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Sincronizando con la red RutAIGeoProxi...</p>
+      </div>
+    }
 
-  <!-- Modal Permisos -->
-  <div class="modal" *ngIf="editingUser">
-    <div class="modal-content">
-      <h3>Editar Permisos: {{ editingUser.name }}</h3>
-      <textarea [(ngModel)]="newPermissionsStr" rows="10"></textarea>
-      <div class="modal-actions">
-        <button class="btn-cancel" (click)="editingUser = null">Cancelar</button>
-        <button class="btn-save" (click)="savePermissions()">Guardar</button>
+    @if (error) {
+      <div class="error-box">{{ error }}</div>
+    }
+
+    @if (!loading && !error) {
+      <div class="table-container">
+        <table class="tech-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Rol Actual</th>
+              <th>Permisos</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users; track user.id) {
+              <tr class="table-row">
+                <td class="id-col">#{{ user.id }}</td>
+                <td>
+                  <div class="user-cell">
+                    <strong>{{ user.nombre }}</strong>
+                    <small>{{ user.email }}</small>
+                  </div>
+                </td>
+                <td>
+                  <select class="tech-select" [ngModel]="user.rol" (ngModelChange)="changeRole(user, $event)">
+                    @for (r of roles; track r) {
+                      <option [value]="r">{{ r | titlecase }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <button class="btn-outline-cyan" (click)="openPermissions(user)">Configurar JSON</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </main>
+
+  <!-- Modal Permisos con efecto Glassmorphism -->
+  @if (editingUser) {
+    <div class="modal-overlay">
+      <div class="glass-card modal-card">
+        <h3 class="tech-font">Editar Permisos: {{ editingUser.nombre }}</h3>
+        <p class="hint">Modifique el objeto JSON para ajustar privilegios extendidos.</p>
+        
+        <textarea class="tech-textarea" [(ngModel)]="newPermissionsStr" rows="10" spellcheck="false"></textarea>
+        
+        <div class="modal-actions">
+          <button class="btn-outline" (click)="editingUser = null">CANCELAR</button>
+          <button class="btn-premium" (click)="savePermissions()">GUARDAR CAMBIOS</button>
+        </div>
       </div>
     </div>
-  </div>
+  }
 </div>

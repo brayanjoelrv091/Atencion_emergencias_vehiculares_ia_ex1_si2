@@ -1,22 +1,37 @@
-annotated-doc==0.0.4
-annotated-types==0.7.0
-anyio==4.13.0
-bcrypt==5.0.0
-click==8.3.2
-colorama==0.4.6
-email-validator==2.3.0
+# ── Core ──
 fastapi==0.135.3
-greenlet==3.4.0
-h11==0.16.0
-idna==3.11
-passlib==1.7.4
-psycopg2-binary==2.9.11
+uvicorn==0.44.0
 pydantic==2.12.5
 pydantic_core==2.41.5
 python-dotenv==1.2.2
 python-jose[cryptography]==3.5.0
+passlib==1.7.4
+bcrypt==5.0.0
+email-validator==2.3.0
+
+# ── Base de Datos ──
 SQLAlchemy==2.0.49
+psycopg2-binary==2.9.11
+
+# ── ASGI ──
 starlette==1.0.0
+anyio==4.13.0
+h11==0.16.0
+
+# ── Storage ──
+python-multipart==0.0.20
+firebase-admin==6.6.0
+
+# ── IA — Clasificación (opcionales, instalar según capacidad del equipo) ──
+# ultralytics==8.3.0      # YOLOv8 (requiere ~1GB, GPU recomendada)
+# openai-whisper==20240930 # Whisper (requiere ffmpeg)
+
+# ── Utilidades ──
+annotated-doc==0.0.4
+annotated-types==0.7.0
+click==8.3.2
+colorama==0.4.6
+greenlet==3.4.0
+idna==3.11
 typing-inspection==0.4.2
 typing_extensions==4.15.0
-uvicorn==0.44.0

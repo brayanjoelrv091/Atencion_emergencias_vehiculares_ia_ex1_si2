@@ -1,3 +1,7 @@
+"""
+Utilidades de seguridad: hashing de contraseñas, JWT y tokens de reset.
+"""
+
 import hashlib
 import secrets
 import uuid
@@ -11,6 +15,7 @@ from app.core.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+# ── Contraseñas ────────────────────────────────────────────────────────
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -19,6 +24,7 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
+# ── Tokens de recuperación de contraseña ───────────────────────────────
 def hash_reset_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
@@ -27,10 +33,15 @@ def generate_reset_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def create_access_token(*, user_id: int, role: str, expires_delta: timedelta | None = None) -> tuple[str, str, datetime]:
+# ── JWT ────────────────────────────────────────────────────────────────
+def create_access_token(
+    *, user_id: int, role: str, expires_delta: timedelta | None = None
+) -> tuple[str, str, datetime]:
     jti = str(uuid.uuid4())
     expire = datetime.now(timezone.utc) + (
-        expires_delta if expires_delta else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta
+        if expires_delta
+        else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode = {
         "sub": str(user_id),

@@ -1,0 +1,59 @@
+<div class="tech-bg"></div>
+<div class="page-container">
+  <h1 class="neon-title">Reportar Incidente</h1>
+  <p class="subtitle">CU7 · Registra tu emergencia vehicular</p>
+
+  @if (error) { <div class="error-box">{{ error }}</div> }
+  @if (success) { <div class="success-box">{{ success }}</div> }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="glass-card tech-form">
+
+    <div class="form-group">
+      <label>Título del incidente *</label>
+      <input formControlName="titulo" placeholder="Ej: Motor recalentado en autopista" />
+    </div>
+
+    <div class="form-group">
+      <label>Descripción</label>
+      <textarea formControlName="descripcion" rows="3" placeholder="Describe lo ocurrido..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>📍 Ubicación GPS</label>
+      <div class="location-row">
+        <input type="number" formControlName="latitud" placeholder="Latitud" step="any" />
+        <input type="number" formControlName="longitud" placeholder="Longitud" step="any" />
+        <button type="button" class="btn-detect" (click)="detectLocation()" [disabled]="locationLoading">
+          {{ locationLoading ? '⏳ Detectando...' : '📍 Detectar GPS' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Dirección (opcional)</label>
+      <input formControlName="direccion" placeholder="Ej: Av. Bolívar km 5" />
+    </div>
+
+    <div class="form-group">
+      <label>📷 Fotos (máx. 5)</label>
+      <input type="file" accept="image/*" multiple (change)="onPhotosSelected($event)" />
+      @if (selectedPhotos.length > 0) {
+        <small class="file-count">{{ selectedPhotos.length }} foto(s) seleccionada(s)</small>
+      }
+    </div>
+
+    <div class="form-group">
+      <label>🎤 Audio</label>
+      <input type="file" accept="audio/*" (change)="onAudioSelected($event)" />
+      @if (selectedAudio) {
+        <small class="file-count">{{ selectedAudio.name }}</small>
+      }
+    </div>
+
+    <button type="submit" class="btn-premium" [disabled]="form.invalid || loading">
+      {{ loading ? '⏳ Enviando...' : '🚨 Reportar Incidente' }}
+    </button>
+  </form>
+
+  <a routerLink="/incidents" class="back-link">← Mis Incidentes</a>
+</div>

@@ -1,0 +1,48 @@
+<div class="tech-bg"></div>
+<div class="page-container">
+  <h1 class="neon-title">Registrar Taller</h1>
+  <p class="subtitle">CU10 · Configure su taller y técnicos</p>
+  @if (error) { <div class="error-box">{{ error }}</div> }
+  @if (success) { <div class="success-box">{{ success }}</div> }
+
+  @if (!createdWorkshopId) {
+    <form [formGroup]="workshopForm" (ngSubmit)="registerWorkshop()" class="glass-card tech-form">
+      <div class="form-group"><label>Nombre del taller *</label><input formControlName="nombre" placeholder="Ej: Taller Los Andes" /></div>
+      <div class="form-group"><label>Dirección *</label><input formControlName="direccion" placeholder="Ej: Av. Central 123" /></div>
+      <div class="form-group"><label>📍 Ubicación GPS</label>
+        <div class="location-row">
+          <input type="number" formControlName="latitud" placeholder="Latitud" step="any" />
+          <input type="number" formControlName="longitud" placeholder="Longitud" step="any" />
+          <button type="button" class="btn-detect" (click)="detectLocation()" [disabled]="locLoading">{{ locLoading ? '⏳...' : '📍 GPS' }}</button>
+        </div>
+      </div>
+      <div class="form-group"><label>Teléfono</label><input formControlName="telefono" /></div>
+      <div class="form-group"><label>Email</label><input formControlName="email" type="email" /></div>
+      <div class="form-group"><label>Especialidades (separadas por coma)</label><input formControlName="especialidades" placeholder="mecanico, electrico, carroceria" /></div>
+      <button type="submit" class="btn-premium" [disabled]="workshopForm.invalid">🏪 Registrar Taller</button>
+    </form>
+  } @else {
+    <section class="glass-card">
+      <h2 class="section-title">👷 Agregar Técnicos al Taller #{{ createdWorkshopId }}</h2>
+      <form [formGroup]="techForm" (ngSubmit)="addTechnician()" class="tech-form">
+        <div class="form-row">
+          <input formControlName="nombre" placeholder="Nombre del técnico *" />
+          <input formControlName="telefono" placeholder="Teléfono" />
+          <input formControlName="especialidad" placeholder="Especialidad" />
+          <button type="submit" class="btn-premium small" [disabled]="techForm.invalid">➕</button>
+        </div>
+      </form>
+      @if (technicians.length > 0) {
+        <div class="tech-list">
+          @for (t of technicians; track t.id) {
+            <div class="tech-item">
+              <strong>{{ t.nombre }}</strong> <span>{{ t.especialidad || 'General' }}</span>
+              <span class="avail">{{ t.esta_disponible ? '🟢' : '🔴' }}</span>
+            </div>
+          }
+        </div>
+      }
+      <a routerLink="/workshops/requests" class="btn-premium small" style="margin-top:1rem;display:inline-block;">📋 Ver Solicitudes</a>
+    </section>
+  }
+</div>

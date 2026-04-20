@@ -1,17 +1,97 @@
-.nav {
+.nav-bar {
   display: flex;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  background: #0d47a1;
-  font-family: system-ui, sans-serif;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.5rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
-.nav a {
-  color: #fff;
+
+.nav-brand {
+  color: var(--accent-cyan);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
   text-decoration: none;
-  opacity: 0.9;
+  letter-spacing: 2px;
 }
-.nav a.active {
-  text-decoration: underline;
-  font-weight: 600;
-  opacity: 1;
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--accent-cyan);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: 1rem;
+  transition: transform 0.3s;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--accent-cyan);
+  background: rgba(0, 242, 255, 0.08);
+}
+
+.btn-logout-nav {
+  background: transparent;
+  border: 1px solid rgba(255, 80, 80, 0.5);
+  color: #ff6b6b;
+  padding: 0.35rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.3s;
+  margin-left: 0.5rem;
+}
+
+.btn-logout-nav:hover {
+  background: rgba(255, 80, 80, 0.15);
+}
+
+@media (max-width: 768px) {
+  .menu-toggle { display: block; }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    flex-direction: column;
+    padding: 1rem;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a { width: 100%; text-align: center; padding: 0.7rem; }
 }

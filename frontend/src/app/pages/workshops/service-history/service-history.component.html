@@ -1,0 +1,29 @@
+<div class="tech-bg"></div>
+<div class="page-container">
+  <h1 class="neon-title">Historial de Atenciones</h1>
+  <p class="subtitle">CU13 · Registro histórico de servicios realizados</p>
+  @if (error) { <div class="error-box">{{ error }}</div> }
+
+  @if (workshops.length > 1) {
+    <div class="tabs">
+      @for (ws of workshops; track ws.id) {
+        <button [class.active]="selectedId === ws.id" (click)="loadHistory(ws.id)">{{ ws.nombre }}</button>
+      }
+    </div>
+  }
+
+  <div class="history-list">
+    @for (h of history; track h.id) {
+      <div class="glass-card history-card">
+        <div class="h-head"><strong>#{{ h.id }}</strong> <span class="badge">{{ h.estado }}</span></div>
+        <div class="h-meta">
+          @if (h.titulo_incidente) { <span>{{ h.titulo_incidente }}</span> }
+          @if (h.categoria_incidente) { <span class="tag">{{ h.categoria_incidente }}</span> }
+          @if (h.severidad_incidente) { <span class="tag">{{ h.severidad_incidente }}</span> }
+        </div>
+        @if (h.notas) { <p class="h-notes">{{ h.notas }}</p> }
+        <small class="h-date">{{ h.creado_en | slice:0:10 }}</small>
+      </div>
+    } @empty { <p class="empty-msg">Sin historial de atenciones.</p> }
+  </div>
+</div>

@@ -19,10 +19,10 @@ export class HomeComponent implements OnInit {
   vehicleError = '';
 
   vehicleForm = this.fb.nonNullable.group({
-    brand: ['', Validators.required],
-    model: ['', Validators.required],
-    license_plate: ['', Validators.required],
-    year: [null as number | null],
+    marca: ['', Validators.required],
+    modelo: ['', Validators.required],
+    placa: ['', Validators.required],
+    anio: [null as number | null],
   });
 
   ngOnInit(): void {
@@ -38,11 +38,15 @@ export class HomeComponent implements OnInit {
   }
 
   get isCliente(): boolean {
-    return this.me?.role === 'cliente';
+    return this.me?.rol === 'cliente';
   }
 
   get isAdmin(): boolean {
-    return this.me?.role === 'admin';
+    return this.me?.rol === 'admin';
+  }
+
+  get isTaller(): boolean {
+    return this.me?.rol === 'taller';
   }
 
   addVehicle(): void {
@@ -51,14 +55,14 @@ export class HomeComponent implements OnInit {
     this.vehicleError = '';
     this.auth
       .addVehicle({
-        brand: v.brand,
-        model: v.model,
-        license_plate: v.license_plate,
-        year: v.year ?? undefined,
+        marca: v.marca,
+        modelo: v.modelo,
+        placa: v.placa,
+        anio: v.anio ?? undefined,
       })
       .subscribe({
         next: () => {
-          this.vehicleForm.reset({ brand: '', model: '', license_plate: '', year: null });
+          this.vehicleForm.reset({ marca: '', modelo: '', placa: '', anio: null });
           this.refresh();
         },
         error: (e) => (this.vehicleError = e?.error?.detail ?? 'No se pudo guardar el vehículo.'),
@@ -66,7 +70,7 @@ export class HomeComponent implements OnInit {
   }
 
   removeVehicle(v: Vehicle): void {
-    if (!confirm(`Eliminar ${v.license_plate}?`)) return;
+    if (!confirm(`Eliminar ${v.placa}?`)) return;
     this.auth.deleteVehicle(v.id).subscribe({ next: () => this.refresh() });
   }
 
