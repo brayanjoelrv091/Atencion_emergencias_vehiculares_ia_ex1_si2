@@ -30,8 +30,6 @@ from app.modules.p1_usuarios.models import (  # noqa: F401
     Usuario,
     Vehiculo,
 )
-from app.shared.bitacora import Bitacora  # noqa: F401
-
 from app.modules.p2_incidentes.models import (  # noqa: F401
     ClasificacionIncidente,
     Incidente,
@@ -45,7 +43,7 @@ from app.modules.p3_talleres.models import (  # noqa: F401
 from app.modules.p4_asignacion.models import Asignacion  # noqa: F401
 
 # ── Importar routers de módulos ──
-from app.modules.p1_usuarios.routes import admin_router, audit_router, auth_router, profile_router
+from app.modules.p1_usuarios.routes import admin_router, auth_router, profile_router
 from app.modules.p2_incidentes.routes import router as incidents_router
 from app.modules.p3_talleres.routes import router as workshops_router
 from app.modules.p4_asignacion.routes import router as assignments_router
@@ -122,7 +120,6 @@ if settings.UPLOAD_DIR.exists():
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(profile_router)
-app.include_router(audit_router)      # Req.4 — Bitácora
 # P2: Incidentes
 app.include_router(incidents_router)
 # P3: Talleres
@@ -133,7 +130,6 @@ app.include_router(assignments_router)
 app.include_router(payments_router)
 # P6: Reportes (placeholder)
 app.include_router(reports_router)
-
 
 
 # ── Root endpoint ──
@@ -147,14 +143,12 @@ def root():
         "modulos": {
             "P1_usuarios_seguridad": {
                 "estado": "✅ Implementado",
-                "CU1_inicio_sesion": "POST /auth/login [Bloqueo por capas Req.1]",
+                "CU1_inicio_sesion": "POST /auth/login",
                 "CU2_cierre_sesion": "POST /auth/logout",
-                "CU3_registro": "POST /auth/register [Email Brevo Req.2]",
-                "CU4a_recuperar_password": "POST /auth/forgot-password [Brevo SMTP Req.2]",
-                "CU4b_reset_password": "POST /auth/reset-password [Regex Req.5]",
-                "CU5_roles_permisos": "GET/POST /admin/users, PATCH /admin/users/{id}/role|permissions|unlock",
-                "CU6_usuario_vehiculo": "GET/PATCH /me, POST /me/change-password, GET/POST/PATCH/DELETE /me/vehicles",
-                "Req4_bitacora": "GET /audit/logs [Solo admin]",
+                "CU3_registro": "POST /auth/register",
+                "CU4_recuperar_password": "POST /auth/forgot-password + /auth/reset-password",
+                "CU5_roles_permisos": "GET/POST /admin/users, PATCH /admin/users/{id}/role|permissions",
+                "CU6_usuario_vehiculo": "GET/PATCH /me, GET/POST/PATCH/DELETE /me/vehicles",
             },
             "P2_incidentes": {
                 "estado": "✅ Implementado",

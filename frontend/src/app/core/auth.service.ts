@@ -122,45 +122,4 @@ export class AuthService {
   deleteVehicle(id: number): Observable<unknown> {
     return this.http.delete(`${this.base}/me/vehicles/${id}`);
   }
-
-  /**
-   * Req. 6 — Cambio de contraseña desde el perfil.
-   * Requiere contraseña actual para seguridad.
-   */
-  changePassword(passwordActual: string, nuevaPassword: string): Observable<void> {
-    return this.http.post<void>(`${this.base}/me/change-password`, {
-      password_actual: passwordActual,
-      nueva_password: nuevaPassword,
-    });
-  }
-
-  /**
-   * Req. 1 — Desbloquear cuenta permanente (solo admin).
-   */
-  unlockUser(userId: number): Observable<Me> {
-    return this.http.post<Me>(`${this.base}/admin/users/${userId}/unlock`, {});
-  }
-
-  /**
-   * Req. 4 — Obtener bitácora de auditoría (solo admin).
-   */
-  getAuditLogs(limit = 100, modulo?: string): Observable<AuditLog[]> {
-    let url = `${this.base}/audit/logs?limit=${limit}`;
-    if (modulo) url += `&modulo=${modulo}`;
-    return this.http.get<AuditLog[]>(url);
-  }
-}
-
-export interface AuditLog {
-  id: number;
-  usuario_id: number | null;
-  usuario_email: string | null;
-  rol: string | null;
-  accion: string;
-  descripcion: string | null;
-  ip_origen: string | null;
-  modulo: string | null;
-  recurso_id: number | null;
-  resultado: string;
-  registrado_en: string;
 }

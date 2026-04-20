@@ -1,87 +1,36 @@
 <div class="tech-bg"></div>
-<div class="blob-cyan"></div>
-<div class="blob-purple"></div>
 
 <div class="auth-container">
   <div class="glass-card auth-card">
     <h1 class="tech-font cyan-text">CREAR CUENTA</h1>
     <p class="subtitle-small">Únete a la Red de Asistencia RutAIGeoProxi</p>
-
-    @if (ok) {
-      <div class="success-msg-box" style="margin-top:1rem;">
-        ✅ Cuenta creada. Redirigiendo al login...
-      </div>
-    }
-
+    
     <form [formGroup]="form" (ngSubmit)="submit()" class="tech-form-vertical">
-
-      <!-- Nombre -->
       <div class="form-group">
         <label>Nombre Completo</label>
-        <input
-          type="text"
-          formControlName="nombre"
-          placeholder="Juan Pérez"
-          [class.ng-invalid]="nombreInvalido"
-          [class.ng-touched]="nombreInvalido"
-        />
-        @if (nombreInvalido) {
-          <span class="field-error">Este campo es obligatorio</span>
-        }
+        <input type="text" formControlName="nombre" placeholder="Juan Pérez" />
       </div>
 
-      <!-- Email -->
       <div class="form-group">
         <label>Correo Electrónico</label>
-        <input
-          type="email"
-          formControlName="email"
-          autocomplete="email"
-          placeholder="ejemplo@correo.com"
-          [class.ng-invalid]="emailInvalido"
-          [class.ng-touched]="emailInvalido"
-        />
-        @if (emailInvalido) {
-          <span class="field-error">Ingresa un correo electrónico válido</span>
-        }
+        <input type="email" formControlName="email" autocomplete="email" placeholder="ejemplo@correo.com" />
       </div>
 
-      <!-- Contraseña -->
       <div class="form-group">
         <label>Contraseña</label>
-        <input
-          type="password"
-          formControlName="password"
-          autocomplete="new-password"
-          placeholder="Mín. 8 caracteres"
-          [class.ng-invalid]="passwordInvalido"
-          [class.ng-touched]="passwordInvalido"
-        />
-        <!-- Req. 5 — Hint de reglas de contraseña -->
-        <div class="password-hint">
-          Debe tener mín. <strong>8 caracteres</strong>, una <strong>mayúscula</strong>,
-          una <strong>minúscula</strong> y un <strong>número</strong>. (bcrypt — sensible a mayúsculas)
-        </div>
-        @if (passwordDebil) {
-          <span class="field-error">La contraseña no cumple los requisitos de seguridad</span>
-        }
-        @if (passwordInvalido && !passwordDebil) {
-          <span class="field-error">Este campo es obligatorio</span>
-        }
+        <input type="password" formControlName="password" autocomplete="new-password" placeholder="••••••••" />
       </div>
 
       @if (error) {
         <p class="error-msg-box">{{ error }}</p>
       }
 
-      <button type="submit" class="btn-premium" [disabled]="loading">
-        {{ loading ? 'CREANDO CUENTA...' : 'REGISTRARSE' }}
-      </button>
+      <button type="submit" class="btn-premium" [disabled]="form.invalid">REGISTRARSE</button>
     </form>
 
     <div class="auth-footer">
-      <span class="muted-text">¿Ya tienes una cuenta?</span>
-      <a routerLink="/login">Inicia sesión aquí</a>
+      <span>¿Ya tienes una cuenta?</span>
+      <a routerLink="/login" class="ms-1">Inicia sesión aquí</a>
     </div>
   </div>
 </div>

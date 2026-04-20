@@ -1,11 +1,13 @@
 """
 P1 — Rutas (endpoints) de Usuarios y Seguridad.
 
+Consolida los 3 routers anteriores (auth, admin, profile) en un
+módulo cohesivo con tags separados para Swagger.
+
 Prefijos:
     /auth/*   → CU1, CU2, CU3, CU4
     /admin/*  → CU5
     /me/*     → CU6
-    /audit/*  → Bitácora (solo admin)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -38,23 +40,14 @@ from app.modules.p1_usuarios.schemas import (
     VehicleUpdate,
 )
 from app.modules.p1_usuarios.services import AuthService, UserService, VehicleService
-from app.shared.bitacora import Bitacora, BitacoraService
+from app.modules.p6_auditoria.services import AuditService
 
 # ── Routers ────────────────────────────────────────────────────────────
-auth_router   = APIRouter(prefix="/auth",  tags=["P1 · Autenticación"])
-admin_router  = APIRouter(prefix="/admin", tags=["P1 · Administración"])
-profile_router = APIRouter(prefix="/me",   tags=["P1 · Perfil y Vehículos"])
-audit_router  = APIRouter(prefix="/audit", tags=["P1 · Bitácora de Auditoría"])
+auth_router = APIRouter(prefix="/auth", tags=["P1 · Autenticación"])
+admin_router = APIRouter(prefix="/admin", tags=["P1 · Administración"])
+profile_router = APIRouter(prefix="/me", tags=["P1 · Perfil y Vehículos"])
 
 admin_dep = require_roles("admin")
-
-
-def _get_ip(request: Request) -> str | None:
-    """Extrae la IP real del cliente (soporta proxies)."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else None
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -67,24 +60,19 @@ def _get_ip(request: Request) -> str | None:
     status_code=status.HTTP_201_CREATED,
     summary="CU3 · Registrar usuario",
 )
-def register(payload: UserCreate, request: Request, db: Session = Depends(get_db)):
-    """Registro público. Envía email de bienvenida vía Brevo."""
-    return AuthService.register(db, payload, ip=_get_ip(request))
+def register(payload: UserCreate, db: Session = Depends(get_db)):
+    return AuthService.register(db, payload)
 
 
 @auth_router.post(
     "/login",
     response_model=TokenResponse,
-    summary="CU1 · Iniciar sesión — con bloqueo por capas",
+    summary="CU1 · Iniciar sesión",
 )
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    """
-    Inicio de sesión con política de bloqueo progresivo:
-    - Intento 3 → bloqueado 5 min
-    - Intento 4 → bloqueado 15 min
-    - Intento 5 → cuenta desactivada permanentemente + email notificación
-    """
-    return AuthService.login(db, payload, ip=_get_ip(request))
+    token_resp = AuthService.login(db, payload)
+    AuditService.log(db, accion=f"Inicio de sesión exitoso ({payload.email})", request=request)
+    return token_resp
 
 
 @auth_router.post(
@@ -93,45 +81,42 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
     summary="CU2 · Cerrar sesión",
 )
 def logout(
-    request: Request,
     db: Session = Depends(get_db),
     token: str = Depends(get_token_credentials),
 ):
     payload = jwt_payload_safe(token)
     if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
-    AuthService.logout(db, token, payload, ip=_get_ip(request))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido",
+        )
+    AuthService.logout(db, token, payload)
 
 
 @auth_router.post(
     "/forgot-password",
     response_model=ForgotPasswordResponse,
-    summary="CU4a · Solicitar recuperación — Email real via Brevo",
+    summary="CU4 · Solicitar recuperación de contraseña",
 )
 def forgot_password(
-    payload: ForgotPasswordRequest,
-    request: Request,
-    db: Session = Depends(get_db),
+    payload: ForgotPasswordRequest, db: Session = Depends(get_db)
 ):
-    """Envía un email real con link de recuperación (token válido 1 hora)."""
-    return AuthService.forgot_password(db, payload.email, ip=_get_ip(request))
+    return AuthService.forgot_password(db, payload.email)
 
 
 @auth_router.post(
     "/reset-password",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="CU4b · Restablecer contraseña con token del email",
+    summary="CU4 · Restablecer contraseña con token",
 )
 def reset_password(
-    payload: ResetPasswordRequest,
-    request: Request,
-    db: Session = Depends(get_db),
+    payload: ResetPasswordRequest, db: Session = Depends(get_db)
 ):
-    AuthService.reset_password(db, payload, ip=_get_ip(request))
+    AuthService.reset_password(db, payload)
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# ADMIN  (CU5 · Roles, permisos y desbloqueos)
+# ADMIN  (CU5 · Roles y permisos)
 # ═══════════════════════════════════════════════════════════════════════
 
 @admin_router.post(
@@ -168,11 +153,10 @@ def admin_list_users(
 def admin_update_role(
     user_id: int,
     payload: RoleUpdate,
-    request: Request,
     db: Session = Depends(get_db),
     current: Usuario = Depends(admin_dep),
 ):
-    return UserService.update_role(db, user_id, payload, current.id, ip=_get_ip(request))
+    return UserService.update_role(db, user_id, payload, current.id)
 
 
 @admin_router.patch(
@@ -189,30 +173,27 @@ def admin_update_permissions(
     return UserService.update_permissions(db, user_id, payload)
 
 
-@admin_router.post(
-    "/users/{user_id}/unlock",
-    response_model=UserOut,
-    summary="CU5 · Desbloquear cuenta ban permanente (admin)",
-)
-def admin_unlock_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current: Usuario = Depends(admin_dep),
-):
-    """Reactiva una cuenta bloqueada permanentemente por intentos fallidos."""
-    return UserService.unlock_user(db, user_id, current.id)
-
-
 # ═══════════════════════════════════════════════════════════════════════
 # PERFIL  (CU6 · Datos de usuario y vehículo)
 # ═══════════════════════════════════════════════════════════════════════
 
-@profile_router.get("", response_model=MeResponse, summary="CU6 · Ver mi perfil")
-def get_me(db: Session = Depends(get_db), current: Usuario = Depends(get_current_user)):
+@profile_router.get(
+    "",
+    response_model=MeResponse,
+    summary="CU6 · Ver mi perfil",
+)
+def get_me(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
     return UserService.get_me(db, current.id)
 
 
-@profile_router.patch("", response_model=MeResponse, summary="CU6 · Actualizar mi perfil")
+@profile_router.patch(
+    "",
+    response_model=MeResponse,
+    summary="CU6 · Actualizar mi perfil",
+)
 def update_me(
     payload: UserProfileUpdate,
     db: Session = Depends(get_db),
@@ -220,11 +201,9 @@ def update_me(
 ):
     return UserService.update_profile(db, current.id, payload)
 
-
-@profile_router.post(
-    "/change-password",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="CU6 · Cambiar contraseña desde perfil (requiere contraseña actual)",
+@profile_router.put(
+    "/password",
+    summary="Cambiar contraseña internamente",
 )
 def change_password(
     payload: ChangePasswordRequest,
@@ -232,16 +211,20 @@ def change_password(
     db: Session = Depends(get_db),
     current: Usuario = Depends(get_current_user),
 ):
-    """
-    Req. 6 — Permite al usuario autenticado cambiar su propia contraseña.
-    Exige la contraseña actual para evitar acceso no autorizado desde
-    un dispositivo desbloqueado.
-    """
-    UserService.change_password(db, current.id, payload, ip=_get_ip(request))
+    res = UserService.change_password(db, current.id, payload)
+    AuditService.log(db, usuario_id=current.id, rol=current.rol, accion="Cambio de contraseña interno", request=request)
+    return res
 
 
-@profile_router.get("/vehicles", response_model=list[VehicleOut], summary="CU6 · Listar vehículos")
-def list_vehicles(db: Session = Depends(get_db), current: Usuario = Depends(get_current_user)):
+@profile_router.get(
+    "/vehicles",
+    response_model=list[VehicleOut],
+    summary="CU6 · Listar mis vehículos",
+)
+def list_vehicles(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
     return VehicleService.list_by_user(db, current.id)
 
 
@@ -257,11 +240,18 @@ def create_vehicle(
     current: Usuario = Depends(get_current_user),
 ):
     if current.rol != "cliente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo clientes pueden registrar vehículos")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo clientes pueden registrar vehículos",
+        )
     return VehicleService.create(db, current.id, payload)
 
 
-@profile_router.patch("/vehicles/{vehicle_id}", response_model=VehicleOut, summary="CU6 · Actualizar vehículo")
+@profile_router.patch(
+    "/vehicles/{vehicle_id}",
+    response_model=VehicleOut,
+    summary="CU6 · Actualizar vehículo",
+)
 def update_vehicle(
     vehicle_id: int,
     payload: VehicleUpdate,
@@ -271,7 +261,11 @@ def update_vehicle(
     return VehicleService.update(db, vehicle_id, current.id, payload)
 
 
-@profile_router.delete("/vehicles/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT, summary="CU6 · Eliminar vehículo")
+@profile_router.delete(
+    "/vehicles/{vehicle_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="CU6 · Eliminar vehículo",
+)
 def delete_vehicle(
     vehicle_id: int,
     db: Session = Depends(get_db),
@@ -279,42 +273,24 @@ def delete_vehicle(
 ):
     VehicleService.delete(db, vehicle_id, current.id)
 
-
-# ═══════════════════════════════════════════════════════════════════════
-# BITÁCORA  (Req. 4 · Solo admin)
-# ═══════════════════════════════════════════════════════════════════════
-
-from pydantic import BaseModel as _BM
-from datetime import datetime as _dt
-
-class BitacoraOut(_BM):
-    id: int
-    usuario_id: int | None
-    usuario_email: str | None
-    rol: str | None
-    accion: str
-    descripcion: str | None
-    ip_origen: str | None
-    modulo: str | None
-    recurso_id: int | None
-    resultado: str
-    registrado_en: _dt
-    model_config = {"from_attributes": True}
-
-
-@audit_router.get(
-    "/logs",
-    response_model=list[BitacoraOut],
-    summary="Req.4 · Ver bitácora de auditoría (admin)",
-)
-def get_audit_logs(
-    limit: int = 100,
-    modulo: str | None = None,
-    db: Session = Depends(get_db),
-    _current: Usuario = Depends(admin_dep),
-):
-    """Devuelve los últimos N registros de auditoría. Filtra por módulo si se indica."""
-    q = db.query(Bitacora).order_by(Bitacora.registrado_en.desc())
-    if modulo:
-        q = q.filter(Bitacora.modulo == modulo.upper())
-    return q.limit(limit).all()
+@auth_router.post("/seed-demo", status_code=status.HTTP_201_CREATED)
+def seed_demo_users_quick(db: Session = Depends(get_db)):
+    """Inyectar 3 usuarios fijos (Admin, Taller, Cliente) creados desde el backend"""
+    from app.core.security import get_password_hash
+    hashed_pw = get_password_hash("Password123")
+    creados = 0
+    usuarios_demo = [
+        {"nombre": "Super Admin UI", "email": "admin@ruta.com", "rol": "admin"},
+        {"nombre": "Taller Mecanico Centro", "email": "taller@ruta.com", "rol": "taller"},
+        {"nombre": "Cliente VIP", "email": "cliente@ruta.com", "rol": "cliente"}
+    ]
+    for u in usuarios_demo:
+        if not db.query(Usuario).filter(Usuario.email == u["email"]).first():
+            db.add(Usuario(
+                nombre=u["nombre"], email=u["email"], 
+                hashed_password=hashed_pw, rol=u["rol"],
+                esta_activo=True, intentos_fallidos=0
+            ))
+            creados += 1
+    db.commit()
+    return {"message": f"Se inyectaron {creados} usuarios a la BD.", "contrasena_universal": "Password123"}

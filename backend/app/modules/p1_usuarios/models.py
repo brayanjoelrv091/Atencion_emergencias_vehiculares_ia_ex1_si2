@@ -27,11 +27,10 @@ class Usuario(Base):
     esta_activo = Column(Boolean, default=True, nullable=False)
     rol = Column(String(20), nullable=False, default="cliente")
     permisos = Column(JSON, nullable=True)
-
-    # ── Seguridad: Bloqueo por capas (Requerimiento 1) ──
-    intentos_fallidos = Column(Integer, nullable=False, default=0)
+    
+    # ── Lockout & Security ──
+    intentos_fallidos = Column(Integer, default=0, nullable=False)
     bloqueado_hasta = Column(DateTime(timezone=True), nullable=True)
-
 
     # ── Relaciones ──
     vehiculos = relationship(

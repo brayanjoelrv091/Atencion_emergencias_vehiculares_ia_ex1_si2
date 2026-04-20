@@ -1,34 +1,26 @@
 """
 P1 — Schemas Pydantic para Usuarios y Seguridad.
 
-Incluye:
-  - Validación de contraseña con regex (Req. 5): min 8 chars, 1 mayúscula, 1 minúscula, 1 número.
-  - ChangePasswordRequest para cambio desde el perfil (Req. 6).
-  - Todos los campos obligatorios con Field() (Req. 3 — capa backend).
+Agrupa auth, user, vehicle en un solo archivo por módulo.
 """
 
-import re
 from typing import Any
+import re
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # ── Roles válidos del sistema ──────────────────────────────────────────
 ROLES_VALIDOS = frozenset({"admin", "taller", "cliente"})
 
-# ── Regex de contraseña segura (Req. 5) ───────────────────────────────
-# Mínimo 8 caracteres · al menos 1 mayúscula · 1 minúscula · 1 número
-_PASSWORD_REGEX = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
-
-_PASSWORD_REGLAS = (
-    "La contraseña debe tener mínimo 8 caracteres, "
-    "al menos 1 mayúscula, 1 minúscula y 1 número."
-)
-
-
-def _validar_password(v: str) -> str:
-    """Validor reutilizable para contraseñas con regex (Req. 5)."""
-    if not _PASSWORD_REGEX.match(v):
-        raise ValueError(_PASSWORD_REGLAS)
+def check_password_complexity(v: str) -> str:
+    if len(v) < 8:
+        raise ValueError("La contraseña debe tener al menos 8 caracteres")
+    if not any(c.isupper() for c in v):
+        raise ValueError("La contraseña debe contener al menos una mayúscula")
+    if not any(c.islower() for c in v):
+        raise ValueError("La contraseña debe contener al menos una minúscula")
+    if not any(c.isdigit() for c in v):
+        raise ValueError("La contraseña debe contener al menos un número")
     return v
 
 
@@ -38,7 +30,7 @@ def _validar_password(v: str) -> str:
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=1, description="Contraseña del usuario")
+    password: str = Field(min_length=1)
 
 
 class TokenResponse(BaseModel):
@@ -57,33 +49,22 @@ class ResetPasswordRequest(BaseModel):
 
     @field_validator("new_password")
     @classmethod
-    def password_segura(cls, v: str) -> str:
-        return _validar_password(v)
+    def validar_pass(cls, v: str) -> str:
+        return check_password_complexity(v)
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def validar_pass(cls, v: str) -> str:
+        return check_password_complexity(v)
 
 
 class ForgotPasswordResponse(BaseModel):
     message: str
     debug_token: str | None = None
-
-
-# ── Cambio de contraseña desde el perfil (Req. 6) ─────────────────────
-
-class ChangePasswordRequest(BaseModel):
-    """CU6 — Cambio de contraseña autenticado (requiere contraseña actual)."""
-    password_actual: str = Field(
-        min_length=1,
-        description="Contraseña actual del usuario (verificación de identidad)",
-    )
-    nueva_password: str = Field(
-        min_length=8,
-        max_length=128,
-        description="Nueva contraseña (mín. 8 chars, 1 mayúscula, 1 minúscula, 1 número)",
-    )
-
-    @field_validator("nueva_password")
-    @classmethod
-    def password_segura(cls, v: str) -> str:
-        return _validar_password(v)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -129,8 +110,8 @@ class UserCreate(BaseModel):
 
     @field_validator("password")
     @classmethod
-    def password_segura(cls, v: str) -> str:
-        return _validar_password(v)
+    def validar_pass(cls, v: str) -> str:
+        return check_password_complexity(v)
 
 
 class UserOut(BaseModel):
@@ -165,8 +146,8 @@ class AdminUserCreate(BaseModel):
 
     @field_validator("password")
     @classmethod
-    def password_segura(cls, v: str) -> str:
-        return _validar_password(v)
+    def validar_pass(cls, v: str) -> str:
+        return check_password_complexity(v)
 
     @field_validator("rol")
     @classmethod

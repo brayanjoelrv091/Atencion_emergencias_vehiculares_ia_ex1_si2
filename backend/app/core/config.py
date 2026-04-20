@@ -64,25 +64,16 @@ class Settings:
     YOLO_MODEL_PATH: str = os.getenv("YOLO_MODEL_PATH", "yolov8n.pt")
     WHISPER_MODEL_SIZE: str = os.getenv("WHISPER_MODEL_SIZE", "base")
 
-    # ── Brevo SMTP — Correo transaccional ──────────────────────────────
-    BREVO_SMTP_HOST: str = os.getenv("BREVO_SMTP_HOST", "smtp-relay.brevo.com")
-    BREVO_SMTP_PORT: int = int(os.getenv("BREVO_SMTP_PORT", "587"))
-    BREVO_SMTP_LOGIN: str | None = os.getenv("BREVO_SMTP_LOGIN") or None
-    BREVO_SMTP_KEY: str | None = os.getenv("BREVO_SMTP_KEY") or None
-    BREVO_FROM_EMAIL: str = os.getenv("BREVO_FROM_EMAIL", "noreply@rutaigeoproxi.com")
-    BREVO_FROM_NAME: str = os.getenv("BREVO_FROM_NAME", "RutAIGeoProxi")
-
-    # ── URLs públicas ──────────────────────────────────────────────────
-    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:4200")
-    LANDING_URL: str = os.getenv("LANDING_URL", "http://localhost:8080")
+    # ── SMTP (Brevo) ───────────────────────────────────────────────────
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp-relay.brevo.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str | None = os.getenv("SMTP_USER") or None
+    SMTP_PASSWORD: str | None = os.getenv("SMTP_PASSWORD") or None
+    FROM_EMAIL: str = os.getenv("FROM_EMAIL", "no-reply@rutaigeoproxi.com")
 
     @property
     def firebase_enabled(self) -> bool:
         return bool(self.FIREBASE_CREDENTIALS_PATH and self.FIREBASE_STORAGE_BUCKET)
-
-    @property
-    def email_enabled(self) -> bool:
-        return bool(self.BREVO_SMTP_LOGIN and self.BREVO_SMTP_KEY)
 
 
 settings = Settings()
