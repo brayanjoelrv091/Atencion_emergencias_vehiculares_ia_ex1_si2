@@ -1,0 +1,131 @@
+"""
+P2 — Modelos de Gestión de Incidentes.
+
+Tablas:
+    - ``incidentes``               → CU7
+    - ``incidente_media``          → CU7 (fotos/audio)
+    - ``clasificaciones_incidente`` → CU8 (resultado IA)
+"""
+
+from datetime import datetime, timezone
+
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
+
+from app.core.database import Base
+
+
+class Incidente(Base):
+    """CU7 · Reporte de incidente vehicular con ubicación GPS."""
+
+    __tablename__ = "incidentes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(
+        Integer,
+        ForeignKey("usuarios.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    titulo = Column(String(300), nullable=False)
+    descripcion = Column(Text, nullable=True)
+    estado = Column(
+        String(30),
+        nullable=False,
+        default="nuevo",
+        index=True,
+    )  # nuevo | clasificado | asignado | en_proceso | resuelto
+    latitud = Column(Float, nullable=False)
+    longitud = Column(Float, nullable=False)
+    direccion = Column(String(500), nullable=True)
+    url_audio = Column(String(1000), nullable=True)
+    severidad = Column(String(30), nullable=True)   # leve | moderado | grave | critico
+    categoria = Column(String(50), nullable=True)    # mecanico | electrico | carroceria | ...
+    creado_en = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    actualizado_en = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # ── Relaciones ──
+    medios = relationship(
+        "IncidenteMedia", back_populates="incidente", cascade="all, delete-orphan"
+    )
+    clasificacion = relationship(
+        "ClasificacionIncidente",
+        back_populates="incidente",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    # Relaciones cross-module (string refs para evitar imports circulares)
+    solicitudes = relationship(
+        "SolicitudServicio", back_populates="incidente", cascade="all, delete-orphan"
+    )
+    asignaciones = relationship(
+        "Asignacion", back_populates="incidente", cascade="all, delete-orphan"
+    )
+
+
+class IncidenteMedia(Base):
+    """CU7 · Archivo multimedia asociado a un incidente (foto o audio)."""
+
+    __tablename__ = "incidente_media"
+
+    id = Column(Integer, primary_key=True, index=True)
+    incidente_id = Column(
+        Integer,
+        ForeignKey("incidentes.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    tipo_medio = Column(String(20), nullable=False)  # foto | audio
+    url_archivo = Column(String(1000), nullable=False)
+    subido_en = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    # ── Relaciones ──
+    incidente = relationship("Incidente", back_populates="medios")
+
+
+class ClasificacionIncidente(Base):
+    """CU8 · Resultado de la clasificación automática por IA."""
+
+    __tablename__ = "clasificaciones_incidente"
+
+    id = Column(Integer, primary_key=True, index=True)
+    incidente_id = Column(
+        Integer,
+        ForeignKey("incidentes.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    categoria = Column(String(50), nullable=False)
+    severidad = Column(String(30), nullable=False)
+    confianza = Column(Float, nullable=False)  # 0.0 - 1.0
+    razonamiento = Column(Text, nullable=True)
+    metodo = Column(String(30), nullable=False, default="reglas")  # reglas | yolo | whisper | combinado
+    clasificado_en = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    # ── Relaciones ──
+    incidente = relationship("Incidente", back_populates="clasificacion")

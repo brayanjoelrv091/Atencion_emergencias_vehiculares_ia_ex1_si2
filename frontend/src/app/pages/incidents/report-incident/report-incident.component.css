@@ -1,0 +1,19 @@
+.page-container { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+.neon-title { color: var(--accent-cyan); text-align: center; margin-bottom: 0.5rem; font-size: 1.6rem; }
+.subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem; letter-spacing: 2px; }
+.glass-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; backdrop-filter: blur(20px); }
+.form-group { margin-bottom: 1.2rem; }
+.form-group label { display: block; color: var(--accent-cyan); margin-bottom: 0.4rem; font-size: 0.85rem; letter-spacing: 1px; }
+.form-group input, .form-group textarea { width: 100%; padding: 0.7rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; transition: border-color 0.3s; }
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 10px var(--glow-cyan); }
+.location-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.location-row input { flex: 1; min-width: 120px; }
+.btn-detect { background: transparent; border: 1px solid var(--accent-blue); color: var(--accent-blue); padding: 0.7rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; transition: all 0.3s; }
+.btn-detect:hover:not(:disabled) { background: var(--accent-blue); color: #fff; }
+.file-count { color: var(--accent-cyan); font-size: 0.8rem; margin-top: 0.3rem; display: block; }
+.error-box { background: rgba(255,50,50,0.15); border: 1px solid rgba(255,50,50,0.4); color: #ff6b6b; padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; }
+.success-box { background: rgba(0,242,255,0.1); border: 1px solid rgba(0,242,255,0.3); color: var(--accent-cyan); padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; }
+.back-link { display: block; text-align: center; margin-top: 1.5rem; color: var(--text-secondary); text-decoration: none; transition: color 0.3s; }
+.back-link:hover { color: var(--accent-cyan); }
+input[type="file"] { padding: 0.5rem; }
+input[type="file"]::file-selector-button { background: var(--accent-blue); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; margin-right: 0.5rem; }

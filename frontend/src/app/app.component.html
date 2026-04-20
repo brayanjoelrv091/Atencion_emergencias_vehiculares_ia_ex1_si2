@@ -1,8 +1,29 @@
-<nav class="nav">
-  <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">Inicio</a>
-  @if (!isLoggedIn()) {
-    <a routerLink="/login" routerLinkActive="active">Login</a>
-    <a routerLink="/register" routerLinkActive="active">Registro</a>
-  }
+<nav class="nav-bar">
+  <a routerLink="/home" class="nav-brand">⚡ RutAIGeoProxi</a>
+
+  <button class="menu-toggle" (click)="toggleMenu()">☰</button>
+
+  <div class="nav-links" [class.open]="menuOpen">
+    @if (isLoggedIn()) {
+      <a routerLink="/home" routerLinkActive="active" (click)="menuOpen=false">🏠 Inicio</a>
+      <a routerLink="/incidents" routerLinkActive="active" (click)="menuOpen=false">🚨 Incidentes</a>
+
+      @if (userRole === 'taller' || userRole === 'admin') {
+        <a routerLink="/workshops/requests" routerLinkActive="active" (click)="menuOpen=false">📋 Solicitudes</a>
+        <a routerLink="/workshops/history" routerLinkActive="active" (click)="menuOpen=false">📊 Historial</a>
+        <a routerLink="/workshops/register" routerLinkActive="active" (click)="menuOpen=false">🏪 Taller</a>
+      }
+
+      @if (userRole === 'admin') {
+        <a routerLink="/admin-users" routerLinkActive="active" (click)="menuOpen=false">👥 Admin</a>
+      }
+
+      <button class="btn-logout-nav" (click)="logout()">Cerrar Sesión</button>
+    } @else {
+      <a routerLink="/login" routerLinkActive="active" (click)="menuOpen=false">Login</a>
+      <a routerLink="/register" routerLinkActive="active" (click)="menuOpen=false">Registro</a>
+    }
+  </div>
 </nav>
+
 <router-outlet />

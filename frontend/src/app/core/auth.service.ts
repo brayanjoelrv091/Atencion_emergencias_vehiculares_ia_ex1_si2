@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../environment';
 
 const TOKEN_KEY = 'access_token';
+const ROLE_KEY = 'user_role';
 
 export interface LoginResponse {
   access_token: string;
@@ -14,22 +15,23 @@ export interface LoginResponse {
 
 export interface Vehicle {
   id: number;
-  user_id: number;
-  brand: string;
-  model: string;
-  license_plate: string;
-  year: number | null;
+  usuario_id: number;
+  marca: string;
+  modelo: string;
+  placa: string;
+  anio: number | null;
+  color: string | null;
 }
 
 export interface Me {
   id: number;
-  name: string;
+  nombre: string;
   email: string;
-  phone: string | null;
-  is_active: boolean;
-  role: string;
-  permissions: Record<string, unknown> | null;
-  vehicles: Vehicle[];
+  telefono: string | null;
+  esta_activo: boolean;
+  rol: string;
+  permisos: Record<string, unknown> | null;
+  vehiculos: Vehicle[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -49,11 +51,22 @@ export class AuthService {
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${this.base}/auth/login`, { email, password })
-      .pipe(tap((r) => sessionStorage.setItem(TOKEN_KEY, r.access_token)));
+      .pipe(
+        tap((r) => {
+          sessionStorage.setItem(TOKEN_KEY, r.access_token);
+          // Decodificar JWT para obtener rol
+          try {
+            const payload = JSON.parse(atob(r.access_token.split('.')[1]));
+            sessionStorage.setItem(ROLE_KEY, payload.role || 'cliente');
+          } catch {
+            sessionStorage.setItem(ROLE_KEY, 'cliente');
+          }
+        })
+      );
   }
 
-  register(name: string, email: string, password: string): Observable<unknown> {
-    return this.http.post(`${this.base}/auth/register`, { name, email, password });
+  register(nombre: string, email: string, password: string): Observable<unknown> {
+    return this.http.post(`${this.base}/auth/register`, { nombre, email, password });
   }
 
   logout(): void {
@@ -65,10 +78,12 @@ export class AuthService {
     this.http.post(`${this.base}/auth/logout`, {}, { headers: { Authorization: `Bearer ${t}` } }).subscribe({
       complete: () => {
         sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(ROLE_KEY);
         void this.router.navigate(['/login']);
       },
       error: () => {
         sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(ROLE_KEY);
         void this.router.navigate(['/login']);
       },
     });
@@ -92,19 +107,60 @@ export class AuthService {
     return this.http.get<Me[]>(`${this.base}/admin/users`);
   }
 
-  updateUserRole(userId: number, role: string): Observable<Me> {
-    return this.http.patch<Me>(`${this.base}/admin/users/${userId}/role`, { role });
+  updateUserRole(userId: number, rol: string): Observable<Me> {
+    return this.http.patch<Me>(`${this.base}/admin/users/${userId}/role`, { rol });
   }
 
-  updateUserPermissions(userId: number, permissions: Record<string, unknown>): Observable<Me> {
-    return this.http.patch<Me>(`${this.base}/admin/users/${userId}/permissions`, { permissions });
+  updateUserPermissions(userId: number, permisos: Record<string, unknown>): Observable<Me> {
+    return this.http.patch<Me>(`${this.base}/admin/users/${userId}/permissions`, { permisos });
   }
 
-  addVehicle(body: { brand: string; model: string; license_plate: string; year?: number | null }): Observable<Vehicle> {
+  addVehicle(body: { marca: string; modelo: string; placa: string; anio?: number | null; color?: string }): Observable<Vehicle> {
     return this.http.post<Vehicle>(`${this.base}/me/vehicles`, body);
   }
 
   deleteVehicle(id: number): Observable<unknown> {
     return this.http.delete(`${this.base}/me/vehicles/${id}`);
   }
+
+  /**
+   * Req. 6 — Cambio de contraseña desde el perfil.
+   * Requiere contraseña actual para seguridad.
+   */
+  changePassword(passwordActual: string, nuevaPassword: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/me/change-password`, {
+      password_actual: passwordActual,
+      nueva_password: nuevaPassword,
+    });
+  }
+
+  /**
+   * Req. 1 — Desbloquear cuenta permanente (solo admin).
+   */
+  unlockUser(userId: number): Observable<Me> {
+    return this.http.post<Me>(`${this.base}/admin/users/${userId}/unlock`, {});
+  }
+
+  /**
+   * Req. 4 — Obtener bitácora de auditoría (solo admin).
+   */
+  getAuditLogs(limit = 100, modulo?: string): Observable<AuditLog[]> {
+    let url = `${this.base}/audit/logs?limit=${limit}`;
+    if (modulo) url += `&modulo=${modulo}`;
+    return this.http.get<AuditLog[]>(url);
+  }
+}
+
+export interface AuditLog {
+  id: number;
+  usuario_id: number | null;
+  usuario_email: string | null;
+  rol: string | null;
+  accion: string;
+  descripcion: string | null;
+  ip_origen: string | null;
+  modulo: string | null;
+  recurso_id: number | null;
+  resultado: string;
+  registrado_en: string;
 }

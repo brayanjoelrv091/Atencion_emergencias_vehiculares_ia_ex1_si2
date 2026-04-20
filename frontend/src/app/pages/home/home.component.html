@@ -1,60 +1,112 @@
-<div class="wrap">
-  <header class="top">
-    <h1>RutAIGeoProxi</h1>
-    <button type="button" class="link" (click)="logout()">Cerrar sesión</button>
+<!-- Fondo de Rejilla Tecnológica -->
+<div class="tech-bg"></div>
+
+<!-- Iconos Flotantes de Fondo -->
+<div class="floating-icons">
+  <div class="icon car" style="top: 20%; left: 10%; animation-delay: 0s;">🚗</div>
+  <div class="icon gear" style="top: 15%; right: 15%; animation-delay: 1s;">⚙️</div>
+  <div class="icon wrench" style="bottom: 25%; left: 15%; animation-delay: 2s;">🔧</div>
+  <div class="icon gear-small" style="bottom: 15%; right: 20%; animation-delay: 0.5s;">⚙️</div>
+  <div class="icon car-side" style="top: 50%; right: 10%; animation-delay: 1.5s;">🏎️</div>
+</div>
+
+<div class="hero-container">
+  <header class="hero-header">
+    <h1 class="neon-title">RutAIGeoProxi</h1>
+    <p class="subtitle">RED DE ASISTENCIA TÉCNICA INTELIGENTE</p>
+    
+    <div class="auth-actions">
+      @if (me) {
+        <button type="button" class="btn-logout" (click)="logout()">Cerrar sesión</button>
+      } @else {
+        <button type="button" class="btn-premium" routerLink="/login">ACCESO TALLERES</button>
+      }
+    </div>
   </header>
 
-  @if (loadError) {
-    <p class="err">{{ loadError }}</p>
-  }
-
-  @if (me) {
-    <section class="card">
-      <h2>Tu perfil</h2>
-      <p><strong>Nombre:</strong> {{ me.name }}</p>
-      <p><strong>Correo:</strong> {{ me.email }}</p>
-      <p><strong>Rol:</strong> {{ me.role }}</p>
-      @if (isAdmin) {
-        <p><a routerLink="/admin-users" class="btn-admin">Ir al Panel de Administración</a></p>
-      }
-    </section>
-
-    @if (isCliente) {
-      <section class="card">
-        <h2>Vehículos</h2>
-        @if (vehicleError) {
-          <p class="err">{{ vehicleError }}</p>
-        }
-        <ul>
-          @for (v of me.vehicles; track v.id) {
-            <li>
-              {{ v.brand }} {{ v.model }} — {{ v.license_plate }}
-              @if (v.year) {
-                ({{ v.year }})
-              }
-              <button type="button" class="link danger" (click)="removeVehicle(v)">Eliminar</button>
-            </li>
-          } @empty {
-            <li>Sin vehículos registrados.</li>
-          }
-        </ul>
-        <h3>Agregar vehículo</h3>
-        <form [formGroup]="vehicleForm" (ngSubmit)="addVehicle()">
-          <div class="row">
-            <input placeholder="Marca" formControlName="brand" />
-            <input placeholder="Modelo" formControlName="model" />
-          </div>
-          <div class="row">
-            <input placeholder="Placa" formControlName="license_plate" />
-            <input type="number" placeholder="Año" formControlName="year" />
-          </div>
-          <button type="submit" [disabled]="vehicleForm.invalid">Guardar</button>
-        </form>
-      </section>
-    } @else {
-      <p class="hint">En Ciclo 1, la gestión de vehículos en API es solo para rol <strong>cliente</strong>.</p>
+  <main class="content-fade-in">
+    @if (loadError) {
+      <div class="error-box">{{ loadError }}</div>
     }
-  }
 
-  <p class="hint"><a routerLink="/login">Ir a login</a></p>
+    @if (me) {
+      <div class="dashboard-grid">
+        <!-- Perfil con efecto Glassmorphism -->
+        <section class="glass-card profile-section">
+          <h2 class="tech-font">Tu Perfil</h2>
+          <div class="profile-info">
+            <p><span>Nombre:</span> {{ me.nombre }}</p>
+            <p><span>Correo:</span> {{ me.email }}</p>
+            <p><span>Rol:</span> <span class="badge">{{ me.rol }}</span></p>
+          </div>
+
+          <!-- Accesos rápidos por rol -->
+          <div class="quick-links">
+            @if (isAdmin) {
+              <a routerLink="/admin-users" class="admin-link">👥 Panel de Administración</a>
+              <a routerLink="/incidents" class="admin-link">🚨 Todos los Incidentes</a>
+            }
+            @if (isCliente) {
+              <a routerLink="/incidents/report" class="admin-link">🚨 Reportar Incidente</a>
+              <a routerLink="/incidents" class="admin-link">📋 Mis Incidentes</a>
+            }
+            @if (isTaller) {
+              <a routerLink="/workshops/requests" class="admin-link">📋 Solicitudes Pendientes</a>
+              <a routerLink="/workshops/history" class="admin-link">📊 Historial</a>
+              <a routerLink="/workshops/register" class="admin-link">🏪 Registrar Taller</a>
+            }
+          </div>
+        </section>
+
+        <!-- Gestión de Vehículos (CU-06) -->
+        @if (isCliente) {
+          <section class="glass-card vehicle-section">
+            <h2 class="tech-font">Mis Vehículos</h2>
+            @if (vehicleError) {
+              <p class="error-msg">{{ vehicleError }}</p>
+            }
+            <div class="vehicle-list">
+              @for (v of me.vehiculos; track v.id) {
+                <div class="vehicle-item">
+                  <div class="v-info">
+                    <strong>{{ v.marca }} {{ v.modelo }}</strong>
+                    <small>{{ v.placa }} @if (v.anio) { ({{ v.anio }}) }</small>
+                  </div>
+                  <button type="button" class="btn-danger-icon" (click)="removeVehicle(v)" title="Eliminar">🗑️</button>
+                </div>
+              } @empty {
+                <p class="empty-msg">No tienes vehículos registrados.</p>
+              }
+            </div>
+
+            <h3 class="tech-font mt-1">Registrar Nuevo</h3>
+            <form [formGroup]="vehicleForm" (ngSubmit)="addVehicle()" class="tech-form">
+              <div class="form-row">
+                <input placeholder="Marca" formControlName="marca" />
+                <input placeholder="Modelo" formControlName="modelo" />
+              </div>
+              <div class="form-row">
+                <input placeholder="Placa" formControlName="placa" />
+                <input type="number" placeholder="Año" formControlName="anio" />
+              </div>
+              <button type="submit" class="btn-premium small" [disabled]="vehicleForm.invalid">Guardar Vehículo</button>
+            </form>
+          </section>
+        }
+      </div>
+    } @else {
+      <!-- Contenido para Invitados (Promo) -->
+      <section class="promo-section">
+        <p>Optimice su taller con nuestra plataforma de geoproximidad e inteligencia asistida.</p>
+        <div class="features-grid">
+          <div class="feature-item">📍 Geolocalización</div>
+          <div class="feature-item">🚗 Gestión de Flotas</div>
+          <div class="feature-item">⚡ Respuesta Inmediata</div>
+          <div class="feature-item">🤖 Clasificación IA</div>
+          <div class="feature-item">🏪 Red de Talleres</div>
+          <div class="feature-item">📊 Historial Completo</div>
+        </div>
+      </section>
+    }
+  </main>
 </div>

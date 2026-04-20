@@ -1,0 +1,29 @@
+<div class="tech-bg"></div>
+<div class="page-container">
+  <h1 class="neon-title">Mis Incidentes</h1>
+  <a routerLink="/incidents/report" class="btn-premium small">🚨 Nuevo Reporte</a>
+
+  @if (error) { <div class="error-box">{{ error }}</div> }
+  @if (assignMessage) { <div class="success-box">{{ assignMessage }}</div> }
+
+  <div class="incident-list">
+    @for (inc of incidents; track inc.id) {
+      <div class="glass-card incident-card">
+        <div class="card-header">
+          <h3><a [routerLink]="['/incidents', inc.id]">{{ inc.titulo }}</a></h3>
+          <span class="badge" [class]="badgeClass(inc.estado)">{{ inc.estado }}</span>
+        </div>
+        <div class="card-meta">
+          @if (inc.categoria) { <span class="tag">{{ inc.categoria }}</span> }
+          @if (inc.severidad) { <span class="tag" [class]="severityClass(inc.severidad)">{{ inc.severidad }}</span> }
+          <span class="date">{{ inc.creado_en | slice:0:10 }}</span>
+        </div>
+        @if (inc.estado === 'clasificado') {
+          <button type="button" class="btn-assign" (click)="autoAssign(inc.id)">🔄 Asignar Taller</button>
+        }
+      </div>
+    } @empty {
+      <p class="empty-msg">No tienes incidentes reportados.</p>
+    }
+  </div>
+</div>
