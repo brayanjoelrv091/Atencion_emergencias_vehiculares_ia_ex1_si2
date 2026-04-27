@@ -20,6 +20,12 @@ Uso:
 import os
 import sys
 
+# Fix encoding para consolas Windows (cp1252) — evita UnicodeEncodeError con tildes/flechas
+if hasattr(sys.stdout, 'buffer') and (sys.stdout.encoding or '').upper() not in ('UTF-8', 'UTF8'):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 from dotenv import load_dotenv
 
 directorio_actual = os.path.dirname(os.path.abspath(__file__))

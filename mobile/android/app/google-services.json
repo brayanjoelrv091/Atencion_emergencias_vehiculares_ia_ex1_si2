@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "88024120573",
+    "project_id": "rutaigeoproxi",
+    "storage_bucket": "rutaigeoproxi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:88024120573:android:ad6a53399bdc7b470c9294",
+        "android_client_info": {
+          "package_name": "com.rutaigeoproxi.rutaigeoproxi_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeAXQNcILQXnQkcycwoAu9oX8YBoCZeXE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
