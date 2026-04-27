@@ -91,6 +91,11 @@ class ServiceRequestOut(BaseModel):
     notas: str | None
     creado_en: datetime
     actualizado_en: datetime | None
+    # Info Enriquecida (IA)
+    titulo_incidente: str | None = None
+    categoria_incidente: str | None = None
+    severidad_incidente: str | None = None
+    resumen_ia: str | None = None
 
     model_config = {"from_attributes": True}
 

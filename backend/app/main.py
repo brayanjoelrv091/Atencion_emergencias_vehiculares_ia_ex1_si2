@@ -7,9 +7,9 @@ Arquitectura:
     P1 · Usuarios y Seguridad     (CU1-CU6)   ✅ Implementado
     P2 · Gestión de Incidentes     (CU7-CU9)   ✅ Implementado
     P3 · Gestión de Talleres       (CU10-CU13)  ✅ Implementado
-    P4 · Asignación y Logística    (CU14)       ✅ Implementado
-    P5 · Pagos y Notificaciones    (CU15-CU18)  📋 Estructura lista
-    P6 · Reportes                  (CU19-CU20)  📋 Estructura lista
+    P4 · Asignación y Logística    (CU14-CU15)  ✅ Implementado
+    P5 · Pagos y Notificaciones    (CU16-CU18)  ✅ Implementado
+    P6 · Reportes                  (CU19-CU20)  ✅ Implementado
 """
 
 import logging
@@ -19,9 +19,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.core.config import settings
-from app.core.database import Base, SessionLocal, engine
-from app.core.security import get_password_hash
+from app.shared.config import settings
+from app.shared.database import Base, SessionLocal, engine
+from app.shared.security import get_password_hash
 
 # ── Importar modelos de TODOS los módulos para que SQLAlchemy los registre ──
 from app.modules.p1_usuarios.models import (  # noqa: F401
@@ -41,6 +41,8 @@ from app.modules.p3_talleres.models import (  # noqa: F401
     Tecnico,
 )
 from app.modules.p4_asignacion.models import Asignacion  # noqa: F401
+from app.modules.p5_pagos.models import Pago, Notificacion  # noqa: F401
+from app.modules.p6_reportes.models import ReporteGenerado  # noqa: F401
 
 # ── Importar routers de módulos ──
 from app.modules.p1_usuarios.routes import admin_router, auth_router, profile_router
@@ -58,6 +60,7 @@ logger = logging.getLogger(__name__)
 # LIFESPAN (startup / shutdown)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Crea tablas y seed del admin al iniciar."""
@@ -69,7 +72,11 @@ async def lifespan(_app: FastAPI):
     if settings.ADMIN_EMAIL and settings.ADMIN_PASSWORD:
         db = SessionLocal()
         try:
-            if not db.query(Usuario).filter(Usuario.email == settings.ADMIN_EMAIL).first():
+            if (
+                not db.query(Usuario)
+                .filter(Usuario.email == settings.ADMIN_EMAIL)
+                .first()
+            ):
                 db.add(
                     Usuario(
                         nombre="Administrador",
@@ -98,7 +105,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title="RutAIGeoProxi API",
     description="Red de Asistencia Técnica Vehicular Inteligente — Monolito Modular",
-    version="2.0.0",
+    version="2.1.0",
     lifespan=lifespan,
 )
 
@@ -113,7 +120,9 @@ app.add_middleware(
 
 # ── Servir archivos estáticos (uploads locales) ──
 if settings.UPLOAD_DIR.exists():
-    app.mount("/uploads", StaticFiles(directory=str(settings.UPLOAD_DIR)), name="uploads")
+    app.mount(
+        "/uploads", StaticFiles(directory=str(settings.UPLOAD_DIR)), name="uploads"
+    )
 
 # ── Registrar routers de módulos ──
 # P1: Usuarios y Seguridad
@@ -126,9 +135,9 @@ app.include_router(incidents_router)
 app.include_router(workshops_router)
 # P4: Asignación
 app.include_router(assignments_router)
-# P5: Pagos (placeholder)
+# P5: Pagos y Notificaciones
 app.include_router(payments_router)
-# P6: Reportes (placeholder)
+# P6: Reportes
 app.include_router(reports_router)
 
 
@@ -138,7 +147,7 @@ def root():
     """Mapa de la API por ciclo y caso de uso."""
     return {
         "api": "RutAIGeoProxi",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "arquitectura": "Monolito Modular",
         "modulos": {
             "P1_usuarios_seguridad": {
@@ -153,7 +162,7 @@ def root():
             "P2_incidentes": {
                 "estado": "✅ Implementado",
                 "CU7_reportar_incidente": "POST /incidents (multipart: fotos+audio+GPS)",
-                "CU8_clasificacion_ia": "POST /incidents/{id}/classify (YOLOv8+Whisper+Reglas)",
+                "CU8_clasificacion_ia": "POST /incidents/{id}/classify (Groq-LLM+Roboflow+Whisper)",
                 "CU9_ficha_incidente": "GET /incidents/{id}",
             },
             "P3_talleres": {
@@ -165,10 +174,19 @@ def root():
             },
             "P4_asignacion": {
                 "estado": "✅ Implementado",
-                "CU14_asignacion_automatica": "POST /assignments/auto/{incident_id} (Haversine+Multi-criterio)",
+                "CU14_asignacion_automatica": "POST /assignments/auto/{incident_id}",
+                "CU15_tracking_ws": "WS /assignments/ws/track/{incident_id}",
             },
-            "P5_pagos": {"estado": "📋 Estructura lista — Ciclo 3"},
-            "P6_reportes": {"estado": "📋 Estructura lista — Ciclo 3"},
+            "P5_pagos_notificaciones": {
+                "estado": "✅ Implementado",
+                "CU18_procesar_pago_simulado": "POST /payments/process",
+                "CU16_CU17_notificaciones_ws": "WS /payments/ws/notifications/{user_id}",
+            },
+            "P6_reportes": {
+                "estado": "✅ Implementado",
+                "CU19_generacion_datos": "Backend logic",
+                "CU20_exportar_pdf_excel": "GET /reports/incidents/pdf | excel",
+            },
         },
         "docs": "/docs",
     }

@@ -100,8 +100,8 @@ class AuthService {
         'marca': marca,
         'modelo': modelo,
         'placa': placa,
-        if (anio != null) 'anio': anio,
-        if (color != null) 'color': color,
+        ...?anio == null ? null : {'anio': anio},
+        ...?color == null ? null : {'color': color},
       },
       fromJson: (j) => j as Map<String, dynamic>,
     );

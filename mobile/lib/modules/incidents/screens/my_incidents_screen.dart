@@ -1,12 +1,13 @@
-/// Pantalla — Lista de Mis Incidentes (CU7, CU14).
 library;
+
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/api_client.dart';
+import '../../assignments/assignment_service.dart';
 import '../../incidents/models/incident_model.dart';
 import '../../incidents/services/incident_service.dart';
-import '../../assignments/assignment_service.dart';
-import '../../../core/api_client.dart';
 
 class MyIncidentsScreen extends StatefulWidget {
   const MyIncidentsScreen({super.key});
@@ -17,6 +18,7 @@ class MyIncidentsScreen extends StatefulWidget {
 
 class _MyIncidentsScreenState extends State<MyIncidentsScreen> {
   List<Incident> _incidents = [];
+  bool _isAdmin = false;
   bool _loading = true;
   String _error = '';
   String _assignMsg = '';
@@ -28,10 +30,28 @@ class _MyIncidentsScreenState extends State<MyIncidentsScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = ''; });
+    setState(() {
+      _loading = true;
+      _error = '';
+    });
     try {
+      final token = await ApiClient.getToken();
+      String? role;
+      if (token != null && token.contains('.')) {
+        try {
+          final payloadPart = base64Url.normalize(token.split('.')[1]);
+          final payload = jsonDecode(
+            utf8.decode(base64Url.decode(payloadPart)),
+          ) as Map<String, dynamic>;
+          role = payload['role'] as String?;
+        } catch (_) {}
+      }
+
       final list = await IncidentService.listMyIncidents();
-      setState(() => _incidents = list);
+      setState(() {
+        _isAdmin = role == 'admin';
+        _incidents = list;
+      });
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } finally {
@@ -52,22 +72,22 @@ class _MyIncidentsScreenState extends State<MyIncidentsScreen> {
 
   Color _statusColor(String estado) {
     return switch (estado) {
-      'nuevo'      => Colors.orange,
+      'nuevo' => Colors.orange,
       'clasificado' => Colors.blue,
-      'asignado'   => Colors.purple,
+      'asignado' => Colors.purple,
       'en_proceso' => Colors.amber,
-      'resuelto'   => Colors.green,
-      _            => Colors.grey,
+      'resuelto' => Colors.green,
+      _ => Colors.grey,
     };
   }
 
-  Color _severityColor(String? s) {
-    return switch (s) {
-      'leve'     => const Color(0xFF66BB6A),
+  Color _severityColor(String? severity) {
+    return switch (severity) {
+      'leve' => const Color(0xFF66BB6A),
       'moderado' => const Color(0xFFFFA726),
-      'grave'    => const Color(0xFFEF5350),
-      'critico'  => const Color(0xFFFF1744),
-      _          => Colors.grey,
+      'grave' => const Color(0xFFEF5350),
+      'critico' => const Color(0xFFFF1744),
+      _ => Colors.grey,
     };
   }
 
@@ -93,7 +113,10 @@ class _MyIncidentsScreenState extends State<MyIncidentsScreen> {
         backgroundColor: const Color(0xFF00F2FF),
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add_alert),
-        label: const Text('Reportar', style: TextStyle(fontWeight: FontWeight.bold)),
+        label: const Text(
+          'Reportar',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: Column(
         children: [
@@ -101,17 +124,21 @@ class _MyIncidentsScreenState extends State<MyIncidentsScreen> {
             Container(
               color: const Color(0xFF0D3350),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(_assignMsg,
-                  style: const TextStyle(color: Color(0xFF00F2FF)),
-                  textAlign: TextAlign.center),
+              child: Text(
+                _assignMsg,
+                style: const TextStyle(color: Color(0xFF00F2FF)),
+                textAlign: TextAlign.center,
+              ),
             ),
           if (_error.isNotEmpty)
             Container(
               color: const Color(0xFF3B0000),
               padding: const EdgeInsets.all(8),
-              child: Text(_error,
-                  style: const TextStyle(color: Color(0xFFFF6B6B)),
-                  textAlign: TextAlign.center),
+              child: Text(
+                _error,
+                style: const TextStyle(color: Color(0xFFFF6B6B)),
+                textAlign: TextAlign.center,
+              ),
             ),
           if (_loading)
             const Expanded(
@@ -123,23 +150,26 @@ class _MyIncidentsScreenState extends State<MyIncidentsScreen> {
             Expanded(
               child: _incidents.isEmpty
                   ? const Center(
-                      child: Text('Sin incidentes reportados',
-                          style: TextStyle(color: Colors.white54)),
+                      child: Text(
+                        'Sin incidentes reportados',
+                        style: TextStyle(color: Colors.white54),
+                      ),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(12),
                       itemCount: _incidents.length,
-                      itemBuilder: (_, i) => _IncidentCard(
-                        incident: _incidents[i],
-                        statusColor: _statusColor(_incidents[i].estado),
-                        severityColor: _severityColor(_incidents[i].severidad),
-                        onAssign: _incidents[i].estado == 'clasificado'
-                            ? () => _autoAssign(_incidents[i].id)
+                      itemBuilder: (_, index) => _IncidentCard(
+                        incident: _incidents[index],
+                        statusColor: _statusColor(_incidents[index].estado),
+                        severityColor: _severityColor(_incidents[index].severidad),
+                        onAssign: _isAdmin &&
+                                _incidents[index].estado == 'clasificado'
+                            ? () => _autoAssign(_incidents[index].id)
                             : null,
                         onTap: () => Navigator.pushNamed(
                           context,
                           '/incident-detail',
-                          arguments: _incidents[i].id,
+                          arguments: _incidents[index].id,
                         ),
                       ),
                     ),
@@ -186,19 +216,25 @@ class _IncidentCard extends StatelessWidget {
                   child: Text(
                     incident.titulo,
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600),
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
+                    color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor.withOpacity(0.5)),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: Text(
                     incident.estado,
@@ -229,8 +265,10 @@ class _IncidentCard extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onAssign,
                   icon: const Icon(Icons.location_on, size: 14),
-                  label: const Text('Asignar Taller Automáticamente',
-                      style: TextStyle(fontSize: 12)),
+                  label: const Text(
+                    'Asignar Taller Automaticamente',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF00F2FF),
                     side: const BorderSide(color: Color(0xFF00F2FF)),
@@ -249,6 +287,7 @@ class _IncidentCard extends StatelessWidget {
 class _Tag extends StatelessWidget {
   final String text;
   final Color color;
+
   const _Tag(this.text, this.color);
 
   @override
@@ -256,9 +295,9 @@ class _Tag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(text, style: TextStyle(color: color, fontSize: 10)),
     );

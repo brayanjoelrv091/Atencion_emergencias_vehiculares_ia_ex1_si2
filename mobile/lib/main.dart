@@ -3,20 +3,37 @@
 /// Rutas:
 ///   /              → Splash / Auth gate
 ///   /login         → Pantalla de login (CU1)
+///   /register      → Registro (CU3)
+///   /forgot-password → Recuperar contraseña (CU4)
 ///   /home          → Dashboard principal
+///   /vehicles      → Mis vehículos (CU6)
 ///   /incidents     → Mis incidentes (CU7 lista)
 ///   /report        → Reportar incidente (CU7)
 ///   /incident-detail → Ficha técnica (CU9)
 ///   /workshops     → Talleres (CU10-CU13)
+///   /tracking      → Tracking en tiempo real (CU15)
+///   /notifications → Centro de notificaciones (CU16/CU17)
+///   /payment       → Pasarela de pago (CU18)
 library;
+
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
+import 'modules/auth/services/auth_service.dart';
 import 'modules/auth/screens/login_screen.dart';
 import 'modules/auth/screens/register_screen.dart';
 import 'modules/auth/screens/forgot_password_screen.dart';
+import 'modules/incidents/screens/incident_detail_screen.dart';
 import 'modules/incidents/screens/my_incidents_screen.dart';
+import 'modules/notifications/screens/notifications_screen.dart';
+import 'modules/notifications/services/notification_service.dart';
+import 'modules/payments/screens/payment_screen.dart';
+import 'modules/tracking/screens/tracking_screen.dart';
+import 'modules/vehicles/screens/my_vehicles_screen.dart';
+import 'modules/workshops/screens/workshop_list_screen.dart';
+import 'screens/report_incident_screen.dart';
 
 void main() {
   runApp(const RutAIGeoProxiApp());
@@ -36,13 +53,36 @@ class RutAIGeoProxiApp extends StatelessWidget {
         '/login': (_) => const _LoginWrapper(),
         '/register': (_) => const RegisterScreen(),
         '/forgot-password': (_) => const ForgotPasswordScreen(),
-        '/home':  (_) => const _HomeWrapper(),
+        '/home': (_) => const _HomeWrapper(),
+        '/vehicles': (_) => const MyVehiclesScreen(),
         '/incidents': (_) => const MyIncidentsScreen(),
-        '/report': (_) => const _ReportIncidentPlaceholder(),
-        '/incident-detail': (_) => const _IncidentDetailPlaceholder(),
-        '/workshops': (_) => const _WorkshopsPlaceholder(),
+        '/report': (_) => const ReportIncidentScreen(),
+        '/incident-detail': (_) => const IncidentDetailScreen(),
+        '/workshops': (_) => const WorkshopListScreen(),
+        '/notifications': (_) => const NotificationsScreen(),
       },
-
+      // Rutas con parámetros (onGenerateRoute)
+      onGenerateRoute: (settings) {
+        if (settings.name == '/tracking') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => TrackingScreen(
+              incidentId: args?['incidentId'] as int? ?? 0,
+              role: args?['role'] as String? ?? 'cliente',
+            ),
+          );
+        }
+        if (settings.name == '/payment') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (_) => PaymentScreen(
+              incidentId: args?['incidentId'] as int? ?? 0,
+              amount: (args?['amount'] as num?)?.toDouble() ?? 0.0,
+            ),
+          );
+        }
+        return null;
+      },
     );
   }
 
@@ -72,9 +112,14 @@ class RutAIGeoProxiApp extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF00F2FF),
           foregroundColor: Colors.black,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: const Color(0xFF111629),
+        selectedColor: const Color(0xFF00F2FF),
+        labelStyle: const TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -100,6 +145,7 @@ class _AuthGateState extends State<_AuthGate> {
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     final token = await ApiClient.getToken();
+    if (!mounted) return;
     if (token != null && token.isNotEmpty) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
@@ -149,24 +195,110 @@ class _LoginWrapper extends StatelessWidget {
   }
 }
 
-class _HomeWrapper extends StatelessWidget {
+// ── Home Dashboard ─────────────────────────────────────────────────────
+
+class _HomeWrapper extends StatefulWidget {
   const _HomeWrapper();
+
+  @override
+  State<_HomeWrapper> createState() => _HomeWrapperState();
+}
+
+class _HomeWrapperState extends State<_HomeWrapper> {
+  int _notifCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initNotifications();
+  }
+
+  Future<void> _initNotifications() async {
+    // Conectar notificaciones WS al cargar el home
+    try {
+      final token = await ApiClient.getToken();
+      if (token == null) return;
+
+      // Decodificar user_id del JWT payload (base64url → JSON)
+      final parts = token.split('.');
+      if (parts.length != 3) return;
+
+      // Normalizar padding base64url
+      var b64 = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+      while (b64.length % 4 != 0) b64 += '=';
+
+      final payloadStr = utf8.decode(base64Decode(b64));
+      final payload = jsonDecode(payloadStr) as Map<String, dynamic>;
+      final userId = int.tryParse(payload['sub']?.toString() ?? '');
+      if (userId == null) return;
+
+      NotificationService.instance.connect(userId, token);
+      NotificationService.instance.notifications.listen((_) {
+        if (mounted) setState(() => _notifCount++);
+      });
+    } catch (_) {
+      // Silenciar errores — las notificaciones son opcionales en home
+    }
+  }
+
+  Future<void> _logout() async {
+    NotificationService.instance.disconnect();
+    await AuthService.logout();
+    if (mounted) Navigator.pushReplacementNamed(context, '/login');
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
       appBar: AppBar(
-        title: const Text('RutAIGeoProxi'),
+        backgroundColor: const Color(0xFF111629),
+        title: const Text(
+          'RutAIGeoProxi',
+          style: TextStyle(
+            color: Color(0xFF00F2FF),
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+          ),
+        ),
         actions: [
+          // Campana de notificaciones con badge
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Color(0xFF00F2FF)),
+                onPressed: () {
+                  setState(() => _notifCount = 0);
+                  Navigator.pushNamed(context, '/notifications');
+                },
+              ),
+              if (_notifCount > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF6B6B),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      '$_notifCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await ApiClient.clearToken();
-              if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
-            },
+            icon: const Icon(Icons.logout, color: Colors.white54),
+            onPressed: _logout,
           ),
         ],
       ),
@@ -175,33 +307,54 @@ class _HomeWrapper extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: 8),
             const Text(
               '¿Qué deseas hacer?',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
+              style: TextStyle(color: Colors.white54, fontSize: 15),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _HomeButton(
               icon: Icons.warning_amber_rounded,
               label: 'Mis Incidentes',
-              sub: 'CU7 · CU9 · CU14',
+              sub: 'CU7 · CU9 · Reportar y ver historial',
               color: const Color(0xFF00F2FF),
               onTap: () => Navigator.pushNamed(context, '/incidents'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+            _HomeButton(
+              icon: Icons.directions_car,
+              label: 'Mis Vehículos',
+              sub: 'CU6 · Gestionar mi flota',
+              color: const Color(0xFF00BFFF),
+              onTap: () => Navigator.pushNamed(context, '/vehicles'),
+            ),
+            const SizedBox(height: 10),
             _HomeButton(
               icon: Icons.store,
               label: 'Talleres',
-              sub: 'CU10 · CU11 · CU12 · CU13',
+              sub: 'CU10-CU13 · Solicitudes e historial',
               color: const Color(0xFF0096FF),
               onTap: () => Navigator.pushNamed(context, '/workshops'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _HomeButton(
               icon: Icons.add_alert,
               label: 'Reportar Incidente',
-              sub: 'CU7 · GPS + Fotos + Audio',
+              sub: 'CU7 · GPS + Descripción',
               color: const Color(0xFFFF6B6B),
               onTap: () => Navigator.pushNamed(context, '/report'),
+            ),
+            const SizedBox(height: 10),
+            _HomeButton(
+              icon: Icons.notifications_active,
+              label: 'Notificaciones',
+              sub: 'CU16/CU17 · Alertas en tiempo real',
+              color: const Color(0xFFFFB300),
+              badge: _notifCount,
+              onTap: () {
+                setState(() => _notifCount = 0);
+                Navigator.pushNamed(context, '/notifications');
+              },
             ),
           ],
         ),
@@ -216,6 +369,7 @@ class _HomeButton extends StatelessWidget {
   final String sub;
   final Color color;
   final VoidCallback onTap;
+  final int badge;
 
   const _HomeButton({
     required this.icon,
@@ -223,87 +377,71 @@ class _HomeButton extends StatelessWidget {
     required this.sub,
     required this.color,
     required this.onTap,
+    this.badge = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(18),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFF111629),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 26),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600)),
-                Text(sub,
-                    style: TextStyle(color: color.withOpacity(0.7), fontSize: 12)),
-              ],
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    sub,
+                    style: TextStyle(color: color.withValues(alpha: 0.6), fontSize: 12),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
-            Icon(Icons.chevron_right, color: color.withOpacity(0.5)),
+            if (badge > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B6B),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$badge',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )
+            else
+              Icon(Icons.chevron_right, color: color.withValues(alpha: 0.4)),
           ],
         ),
       ),
-    );
-  }
-}
-
-// ── Placeholders de pantallas pendientes ──────────────────────────────
-
-class _ReportIncidentPlaceholder extends StatelessWidget {
-  const _ReportIncidentPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Reportar Incidente (CU7)')),
-      body: const Center(
-          child: Text('Pantalla de reporte — implementar en siguiente sprint',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54))),
-    );
-  }
-}
-
-class _IncidentDetailPlaceholder extends StatelessWidget {
-  const _IncidentDetailPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Ficha Técnica (CU9)')),
-      body: const Center(
-          child: Text('Ficha técnica — implementar en siguiente sprint',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54))),
-    );
-  }
-}
-
-class _WorkshopsPlaceholder extends StatelessWidget {
-  const _WorkshopsPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Talleres (CU10-CU13)')),
-      body: const Center(
-          child: Text('Pantallas de talleres — implementar en siguiente sprint',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54))),
     );
   }
 }

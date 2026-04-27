@@ -8,7 +8,7 @@ de los usuarios por seguridad normativa.
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.sql import func
 
-from app.core.database import Base
+from app.shared.database import Base
 
 
 class Bitacora(Base):

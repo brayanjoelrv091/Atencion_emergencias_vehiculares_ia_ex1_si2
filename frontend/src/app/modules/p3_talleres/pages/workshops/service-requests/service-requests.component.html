@@ -1,0 +1,59 @@
+<div class="tech-bg"></div>
+<div class="page-container">
+  <h1 class="neon-title">Solicitudes de Servicio</h1>
+  <p class="subtitle">CU11 · CU12 · Gestiona las solicitudes de tu taller</p>
+  @if (error) { <div class="error-box">{{ error }}</div> }
+  @if (statusMsg) { <div class="success-box">{{ statusMsg }}</div> }
+
+  @if (workshops.length > 1) {
+    <div class="workshop-tabs">
+      @for (ws of workshops; track ws.id) {
+        <button [class.active]="selectedWorkshop?.id === ws.id" (click)="selectWorkshop(ws)">{{ ws.nombre }}</button>
+      }
+    </div>
+  }
+
+  <div class="request-list">
+    @for (req of requests; track req.id) {
+      <div class="glass-card request-card">
+        <div class="card-head">
+          <strong>Solicitud #{{ req.id }}</strong>
+          <span class="badge">{{ req.estado }}</span>
+        </div>
+        <div class="card-meta">
+          Incidente: <a [routerLink]="['/incidents', req.incidente_id]">#{{ req.incidente_id }}</a>
+          @if (req.titulo_incidente) { <span> - {{ req.titulo_incidente }}</span> }
+          · {{ req.creado_en | slice:0:10 }}
+        </div>
+        
+        <!-- Ficha de Inteligencia Artificial (Enriquecida) -->
+        <div class="ia-enrichment">
+          <div class="ia-badgets">
+            @if (req.categoria_incidente) { <span class="ia-badge cat">IA: {{ req.categoria_incidente }}</span> }
+            @if (req.severidad_incidente) { 
+              <span class="ia-badge sev" [attr.data-sev]="req.severidad_incidente">
+                Prioridad: {{ req.severidad_incidente }}
+              </span> 
+            }
+          </div>
+          @if (req.resumen_ia) {
+            <p class="ia-summary"><strong>Resumen IA:</strong> {{ req.resumen_ia }}</p>
+          }
+        </div>
+
+        @if (req.notas) { <p class="notes">{{ req.notas }}</p> }
+        <div class="actions">
+          @if (req.estado === 'pendiente') {
+            <button class="btn-action process" (click)="updateStatus(req.id, 'proceso')">▶ Iniciar</button>
+            <button class="btn-action cancel" (click)="updateStatus(req.id, 'cancelado')">✕ Cancelar</button>
+          }
+          @if (req.estado === 'proceso') {
+            <button class="btn-action done" (click)="updateStatus(req.id, 'atendido')">✓ Atendido</button>
+          }
+        </div>
+      </div>
+    } @empty {
+      <p class="empty-msg">Sin solicitudes pendientes.</p>
+    }
+  </div>
+</div>

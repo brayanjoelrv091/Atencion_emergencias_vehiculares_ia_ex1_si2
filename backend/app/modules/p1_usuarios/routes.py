@@ -13,13 +13,13 @@ Prefijos:
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import (
+from app.shared.deps import (
     get_current_user,
     get_db,
     get_token_credentials,
     require_roles,
 )
-from app.core.security import jwt_payload_safe
+from app.shared.security import jwt_payload_safe
 from app.modules.p1_usuarios.models import Usuario
 from app.modules.p1_usuarios.schemas import (
     AdminUserCreate,
@@ -274,10 +274,15 @@ def delete_vehicle(
     VehicleService.delete(db, vehicle_id, current.id)
 
 @auth_router.post("/seed-demo", status_code=status.HTTP_201_CREATED)
-def seed_demo_users_quick(db: Session = Depends(get_db)):
-    """Inyectar 3 usuarios fijos (Admin, Taller, Cliente) creados desde el backend"""
-    from app.core.security import get_password_hash
-    hashed_pw = get_password_hash("Password123")
+def seed_demo_users_quick(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(admin_dep),
+):
+    """Inyectar 3 usuarios fijos (Admin, Taller, Cliente) creados desde el backend (solo admin)"""
+    import secrets
+    from app.shared.security import get_password_hash
+    password = secrets.token_urlsafe(8)
+    hashed_pw = get_password_hash(password)
     creados = 0
     usuarios_demo = [
         {"nombre": "Super Admin UI", "email": "admin@ruta.com", "rol": "admin"},
@@ -293,4 +298,4 @@ def seed_demo_users_quick(db: Session = Depends(get_db)):
             ))
             creados += 1
     db.commit()
-    return {"message": f"Se inyectaron {creados} usuarios a la BD.", "contrasena_universal": "Password123"}
+    return {"message": f"Se inyectaron {creados} usuarios demo."}

@@ -92,15 +92,62 @@ def _availability_score(available: int, total: int) -> float:
     return available / total
 
 
+def _normalize_text(text: str) -> str:
+    """Elimina tildes y normaliza texto para matching robusto."""
+    replacements = {
+        "á": "a", "é": "e", "í": "i", "ó": "o", "ú": "u", "ñ": "n"
+    }
+    result = text.lower().strip()
+    for acc, plain in replacements.items():
+        result = result.replace(acc, plain)
+    return result
+
+
+# Mapeo de nombres legacy/alternativos → categorías canónicas del sistema
+_SPECIALTY_ALIASES: dict[str, str] = {
+    "motor": "mecanico",
+    "frenos": "mecanico",
+    "transmision": "mecanico",
+    "electricidad": "electrico",
+    "bateria": "electrico",
+    "carroceria": "carroceria",
+    "pintura": "carroceria",
+    "chapa": "carroceria",
+    "llantas": "neumaticos",
+    "neumaticos": "neumaticos",
+    "emergencia": "emergencia_vial",
+    "grua": "emergencia_vial",
+    # Las categorías canónicas se mapean a sí mismas
+    "mecanico": "mecanico",
+    "electrico": "electrico",
+    "emergencia_vial": "emergencia_vial",
+}
+
+
 def _specialty_score(
     workshop_specialties: list[str],
     incident_category: str | None,
 ) -> float:
-    """Score de match de especialidad."""
+    """
+    Score de match de especialidad.
+
+    Normaliza tildes y mapea nombres legacy (motor→mecanico,
+    electricidad→electrico) para garantizar matching correcto.
+    """
     if not incident_category or not workshop_specialties:
         return 0.5  # Neutral si no hay info
-    if incident_category in workshop_specialties:
-        return 1.0  # Match perfecto
+
+    # Normalizar la categoría del incidente
+    normalized_category = _normalize_text(incident_category)
+    canonical_category = _SPECIALTY_ALIASES.get(normalized_category, normalized_category)
+
+    # Normalizar las especialidades del taller y buscar match
+    for spec in workshop_specialties:
+        normalized_spec = _normalize_text(spec)
+        canonical_spec = _SPECIALTY_ALIASES.get(normalized_spec, normalized_spec)
+        if canonical_spec == canonical_category:
+            return 1.0  # Match perfecto
+
     return 0.2  # Sin match
 
 

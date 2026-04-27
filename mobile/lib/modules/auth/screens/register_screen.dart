@@ -1,4 +1,3 @@
-/// Pantalla de Registro (CU3)
 library;
 
 import 'package:flutter/material.dart';
@@ -18,31 +17,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   bool _loading = false;
   String _error = '';
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _loading = true; _error = ''; });
+    setState(() {
+      _loading = true;
+      _error = '';
+    });
     try {
-      // Usamos el servicio de auth. Como no expone `register` publicamente aquí,
-      // usaremos el cliente directamente o debemos agregarlo en AuthService.
-      // Para este código, asumiremos que usamos ApiClient directamente por simplicidad
-      // o que lo pasamos al backend.
-      final response = await ApiClient.post('/auth/register', body: {
-        'nombre': _nameCtrl.text.trim(),
-        'email': _emailCtrl.text.trim(),
-        'password': _passCtrl.text,
-        'rol': 'cliente'
-      });
-      
+      await AuthService.register(
+        _nameCtrl.text.trim(),
+        _emailCtrl.text.trim(),
+        _passCtrl.text,
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('¡Cuenta creada! Ya puedes iniciar sesión.'),
+          content: Text('Cuenta creada. Ya puedes iniciar sesion.'),
           backgroundColor: Colors.green,
-        )
+        ),
       );
       Navigator.of(context).pop();
     } on ApiException catch (e) {
@@ -70,7 +67,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.person_add_alt_1, size: 50, color: Color(0xFF00F2FF)),
+                  const Icon(
+                    Icons.person_add_alt_1,
+                    size: 50,
+                    color: Color(0xFF00F2FF),
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Crear Cuenta',
@@ -82,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const Text(
-                    'Únete a RutAIGeoProxi Cliente',
+                    'Unete a RutAIGeoProxi Cliente',
                     style: TextStyle(color: Colors.white54, fontSize: 13),
                   ),
                   const SizedBox(height: 40),
@@ -90,38 +91,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _nameCtrl,
                     label: 'Nombre Completo',
                     icon: Icons.person_outline,
-                    validator: (v) => v == null || v.isEmpty ? 'Ingresa tu nombre' : null,
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Ingresa tu nombre' : null,
                   ),
                   const SizedBox(height: 16),
                   _buildField(
                     controller: _emailCtrl,
-                    label: 'Correo Electrónico',
+                    label: 'Correo Electronico',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Ingresa tu correo';
-                      if (!v.contains('@')) return 'Correo no válido';
+                      if (!v.contains('@')) return 'Correo no valido';
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
                   _buildField(
                     controller: _passCtrl,
-                    label: 'Contraseña (mín 8 caract.)',
+                    label: 'Contrasena (min 8 caract.)',
                     icon: Icons.lock_outline,
                     obscure: true,
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'Ingresa una contraseña';
-                      if (v.length < 8) return 'Mínimo 8 caracteres';
+                      if (v == null || v.isEmpty) {
+                        return 'Ingresa una contrasena';
+                      }
+                      if (v.length < 8) return 'Minimo 8 caracteres';
                       return null;
                     },
                   ),
                   if (_error.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    Text(_error,
-                        style: const TextStyle(
-                            color: Color(0xFFFF6B6B), fontSize: 13),
-                        textAlign: TextAlign.center),
+                    Text(
+                      _error,
+                      style: const TextStyle(
+                        color: Color(0xFFFF6B6B),
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                   const SizedBox(height: 28),
                   SizedBox(
@@ -133,19 +141,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         backgroundColor: const Color(0xFF00F2FF),
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: _loading
                           ? const SizedBox(
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.black),
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              ),
                             )
-                          : const Text('REGISTRARME',
+                          : const Text(
+                              'REGISTRARME',
                               style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1)),
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
                     ),
                   ),
                 ],

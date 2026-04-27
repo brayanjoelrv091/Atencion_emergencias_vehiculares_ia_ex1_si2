@@ -12,7 +12,7 @@ Endpoints:
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_current_user, get_db, require_roles
+from app.shared.deps import get_current_user, get_db, require_roles
 from app.modules.p1_usuarios.models import Usuario
 from app.modules.p2_incidentes.schemas import (
     ClassificationOut,
@@ -94,7 +94,9 @@ def get_incident_detail(
     db: Session = Depends(get_db),
     current: Usuario = Depends(get_current_user),
 ):
-    return IncidentService.get_detail(db, incident_id, current.id)
+    # Si es admin, no pasamos user_id para saltar la validación de propiedad
+    user_id_to_check = current.id if current.rol != "admin" else None
+    return IncidentService.get_detail(db, incident_id, user_id_to_check)
 
 
 @router.post(

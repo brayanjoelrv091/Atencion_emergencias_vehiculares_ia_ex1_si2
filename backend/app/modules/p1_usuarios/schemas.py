@@ -107,11 +107,20 @@ class UserCreate(BaseModel):
     nombre: str = Field(min_length=1, max_length=200)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
+    rol: str = Field(default="cliente")
 
     @field_validator("password")
     @classmethod
     def validar_pass(cls, v: str) -> str:
         return check_password_complexity(v)
+
+    @field_validator("rol")
+    @classmethod
+    def rol_valido(cls, v: str) -> str:
+        # Solo permitimos registrarse como cliente o taller públicamente
+        if v not in {"cliente", "taller"}:
+            raise ValueError("Solo se permite registro para roles 'cliente' o 'taller'")
+        return v
 
 
 class UserOut(BaseModel):

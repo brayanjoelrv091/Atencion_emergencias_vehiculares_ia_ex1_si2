@@ -18,11 +18,13 @@ from app.modules.p4_asignacion.models import Asignacion
 class AssignmentService:
     """Servicio de asignación automática de talleres usando geoproximidad."""
 
+    from fastapi import BackgroundTasks
     @staticmethod
     def auto_assign(
         db: Session,
         incident_id: int,
         max_radius_km: float = 50.0,
+        background_tasks: BackgroundTasks = None,
     ) -> tuple[Asignacion, list[WorkshopCandidate]]:
         """
         CU14 — Asignación automática del taller más adecuado.
@@ -57,7 +59,7 @@ class AssignmentService:
                 detail="Este incidente ya tiene una asignación activa",
             )
 
-        # 2. Recopilar talleres activos con datos de técnicos
+        # 2. Recopilar talleres activos
         talleres = (
             db.query(Taller)
             .filter(Taller.esta_activo.is_(True))
@@ -69,9 +71,18 @@ class AssignmentService:
                 detail="No hay talleres activos disponibles",
             )
 
+        # Optimización: Cargar todos los técnicos de estos talleres en una sola consulta
+        taller_ids = [t.id for t in talleres]
+        todos_tecnicos = db.query(Tecnico).filter(Tecnico.taller_id.in_(taller_ids)).all()
+        
+        # Agrupar técnicos por taller
+        tech_map: dict[int, list[Tecnico]] = {tid: [] for tid in taller_ids}
+        for tc in todos_tecnicos:
+            tech_map[tc.taller_id].append(tc)
+
         workshop_data: list[dict] = []
         for t in talleres:
-            tecnicos = db.query(Tecnico).filter(Tecnico.taller_id == t.id).all()
+            tecnicos = tech_map.get(t.id, [])
             disponibles = sum(1 for tc in tecnicos if tc.esta_disponible)
             workshop_data.append({
                 "id": t.id,
@@ -81,6 +92,7 @@ class AssignmentService:
                 "especialidades": t.especialidades or [],
                 "tecnicos_disponibles": disponibles,
                 "total_tecnicos": len(tecnicos),
+                "usuario_propietario_id": t.usuario_propietario_id,
             })
 
         # 3. Ejecutar ranking
@@ -140,6 +152,18 @@ class AssignmentService:
 
         db.commit()
         db.refresh(asignacion)
+
+        # 8. Notificar al Taller asignado
+        owner_id = next(w["usuario_propietario_id"] for w in workshop_data if w["id"] == best.taller_id)
+        from app.modules.p5_pagos.services import NotificationService
+        if background_tasks:
+            background_tasks.add_task(
+                NotificationService.send_push_notification,
+                db=db,
+                user_id=owner_id,
+                titulo="Nueva asignación de incidente",
+                mensaje=f"Se te ha asignado el incidente #{incident_id}."
+            )
 
         return asignacion, candidates
 

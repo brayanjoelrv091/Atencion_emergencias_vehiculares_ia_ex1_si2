@@ -8,3 +8,8 @@ String apiBaseUrl() {
   }
   return 'http://127.0.0.1:8000';
 }
+
+class AppConfig {
+  static String get baseUrl => apiBaseUrl();
+  static String get wsBaseUrl => baseUrl.replaceFirst('http', 'ws');
+}

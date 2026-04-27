@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../backend.dart';
-import 'forgot_password_screen.dart';
-import 'register_screen.dart';
+import '../modules/auth/screens/forgot_password_screen.dart';
+import '../modules/auth/screens/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.onLoggedIn});
@@ -37,18 +37,23 @@ class _LoginScreenState extends State<LoginScreen> {
     if (err == null) {
       widget.onLoggedIn();
     } else {
-      setState(() => _error = err.length > 120 ? 'Credenciales incorrectas.' : err);
+      setState(
+        () => _error = err.length > 120 ? 'Credenciales incorrectas.' : err,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RutAIGeoProxi — Login')),
+      appBar: AppBar(title: const Text('RutAIGeoProxi - Login')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Ciclo 1: inicio de sesión (cliente)', style: TextStyle(color: Colors.black54)),
+          const Text(
+            'Ciclo 1: inicio de sesion (cliente)',
+            style: TextStyle(color: Colors.black54),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _email,
@@ -58,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           TextField(
             controller: _password,
-            decoration: const InputDecoration(labelText: 'Contraseña'),
+            decoration: const InputDecoration(labelText: 'Contrasena'),
             obscureText: true,
           ),
           if (_error != null) ...[
@@ -68,13 +73,17 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
           FilledButton(
             onPressed: _loading ? null : _submit,
-            child: Text(_loading ? 'Entrando…' : 'Entrar'),
+            child: Text(_loading ? 'Entrando...' : 'Entrar'),
           ),
           TextButton(
             onPressed: _loading
                 ? null
                 : () {
-                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const RegisterScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const RegisterScreen(),
+                      ),
+                    );
                   },
             child: const Text('Crear cuenta'),
           ),
@@ -82,9 +91,13 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: _loading
                 ? null
                 : () {
-                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ForgotPasswordScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ForgotPasswordScreen(),
+                      ),
+                    );
                   },
-            child: const Text('Olvidé mi contraseña'),
+            child: const Text('Olvide mi contrasena'),
           ),
         ],
       ),

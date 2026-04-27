@@ -17,7 +17,7 @@ Endpoints:
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_current_user, get_db, require_roles
+from app.shared.deps import get_current_user, get_db, require_roles
 from app.modules.p1_usuarios.models import Usuario
 from app.modules.p3_talleres.schemas import (
     ServiceHistoryOut,
@@ -153,6 +153,8 @@ def list_requests(
 # CU12 — Actualización de estado
 # ═══════════════════════════════════════════════════════════════════════
 
+from fastapi import BackgroundTasks
+
 @router.patch(
     "/requests/{request_id}/status",
     response_model=ServiceRequestOut,
@@ -161,10 +163,11 @@ def list_requests(
 def update_status(
     request_id: int,
     payload: ServiceStatusUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current: Usuario = Depends(require_roles("taller", "admin")),
 ):
-    return WorkshopService.update_service_status(db, request_id, current.id, payload)
+    return WorkshopService.update_service_status(db, request_id, current.id, payload, background_tasks)
 
 
 # ═══════════════════════════════════════════════════════════════════════

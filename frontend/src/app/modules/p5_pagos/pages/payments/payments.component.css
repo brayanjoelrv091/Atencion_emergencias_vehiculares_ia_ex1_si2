@@ -1,0 +1,171 @@
+.payment-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 20px;
+}
+
+.neon-card {
+  background: #0d0d0d;
+  width: 100%;
+  max-width: 450px;
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 243, 255, 0.4);
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+  position: relative;
+}
+
+.header h2 {
+  color: #00f3ff;
+  font-family: 'Outfit', sans-serif;
+  margin-bottom: 5px;
+  font-size: 1.5rem;
+}
+
+.header p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+}
+
+.amount-badge {
+  background: rgba(0, 243, 255, 0.05);
+  padding: 15px;
+  border-radius: 10px;
+  margin: 25px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.amount-badge .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #00f3ff;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  color: white;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+input {
+  width: 100%;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.3s;
+}
+
+input:focus {
+  border-color: #00f3ff;
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.card-logo {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 20px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.btn-pay {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(90deg, #00f3ff, #0066ff);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: 0.3s;
+}
+
+.btn-pay:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+}
+
+.footer-info {
+  margin-top: 25px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+}
+
+.error-box {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff9a9a;
+  font-size: 0.9rem;
+}
+
+/* Success Card */
+.success-card {
+  text-align: center;
+  background: #0d0d0d;
+  padding: 50px;
+  border-radius: 20px;
+  border: 1px solid #2ecc71;
+  box-shadow: 0 0 30px rgba(46, 204, 113, 0.1);
+}
+
+.icon-ring {
+  width: 80px;
+  height: 80px;
+  border: 3px solid #2ecc71;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 20px;
+  font-size: 2.5rem;
+  color: #2ecc71;
+  animation: ring-pulse 2s infinite;
+}
+
+@keyframes ring-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
+  100% { transform: scale(1); }
+}
+
+.btn-done {
+  margin-top: 30px;
+  background: white;
+  color: black;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}

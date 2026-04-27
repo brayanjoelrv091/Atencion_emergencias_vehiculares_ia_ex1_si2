@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 
-from app.core.database import Base
+from app.shared.database import Base
 
 
 class Asignacion(Base):

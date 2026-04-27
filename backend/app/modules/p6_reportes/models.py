@@ -1,16 +1,16 @@
-"""
-P6 — Modelos de Reportes (CU19-CU20).
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from app.shared.database import Base
 
-📌 PLACEHOLDER: Este módulo será implementado en el Ciclo 3.
-    - CU19: Generación de reportes estadísticos
-    - CU20: Exportación de reportes (PDF/Excel)
+class ReporteGenerado(Base):
+    """
+    Representa un reporte generado por el sistema (CU19-CU20).
+    """
+    __tablename__ = "reportes_generados"
 
-Tablas planificadas:
-    - reportes_generados
-"""
-
-# from app.core.database import Base
-
-# class ReporteGenerado(Base):
-#     __tablename__ = "reportes_generados"
-#     ...
+    id = Column(Integer, primary_key=True, index=True)
+    nombre_archivo = Column(String, nullable=False)
+    tipo_reporte = Column(String, nullable=False)  # 'PDF', 'EXCEL'
+    generado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    fecha_generacion = Column(DateTime, default=datetime.utcnow)
+    ruta_archivo = Column(String, nullable=True)

@@ -13,7 +13,7 @@ from pathlib import Path
 
 from fastapi import UploadFile
 
-from app.core.config import settings
+from app.shared.config import settings
 
 # Intentar cargar Firebase (opcional)
 _firebase_bucket = None

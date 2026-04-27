@@ -20,7 +20,39 @@
 
       @if (userRole === 'admin') {
         <a routerLink="/admin-users" routerLinkActive="active" (click)="menuOpen=false">👥 Admin</a>
+        <a routerLink="/reports" routerLinkActive="active" (click)="menuOpen=false">📊 Reportes</a>
       }
+
+      <div class="notifications-wrapper">
+        <button class="nav-icon-btn" (click)="toggleNotifications()">
+          🔔
+          @if (unreadCount > 0) {
+            <span class="badge-count">{{ unreadCount }}</span>
+          }
+        </button>
+        
+        @if (showNotifications) {
+          <div class="notifications-panel glass-card">
+            <div class="panel-header">
+              <h4>Notificaciones</h4>
+              <button class="close-btn" (click)="toggleNotifications()">×</button>
+            </div>
+            <div class="panel-body">
+              @if (notifications.length === 0) {
+                <p class="empty-msg">No hay notificaciones</p>
+              } @else {
+                @for (n of notifications; track $index) {
+                  <div class="notification-item" [class.type-payment]="n.type === 'payment_approved'">
+                    <strong>{{ n.titulo || n.title }}</strong>
+                    <p>{{ n.mensaje || n.message }}</p>
+                    <small>{{ n.timestamp | date:'shortTime' }}</small>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
 
       <button class="btn-logout-nav" (click)="logout()">Cerrar Sesión</button>
     } @else {

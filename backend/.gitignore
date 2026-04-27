@@ -1,0 +1,42 @@
+# ── Entornos virtuales ──
+venv/
+.venv/
+env/
+
+# ── Python cache ──
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ── Variables de entorno (NUNCA subir) ──
+.env
+.env.local
+
+# ── Base de datos local ──
+*.db
+*.sqlite3
+
+# ── Modelo IA local (ya no se usa) ──
+*.pt
+
+# ── Uploads locales ──
+uploads/
+
+# ── Logs ──
+*.log
+*.err.log
+
+# ── IDE ──
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Test / Temp ──
+smoke_test_temp.db
+test_flow.py
+smoke_test_apis.py

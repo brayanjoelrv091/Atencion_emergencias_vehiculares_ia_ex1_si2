@@ -11,7 +11,7 @@ Tablas en español:
 from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base
+from app.shared.database import Base
 
 
 class Usuario(Base):
@@ -27,7 +27,7 @@ class Usuario(Base):
     esta_activo = Column(Boolean, default=True, nullable=False)
     rol = Column(String(20), nullable=False, default="cliente")
     permisos = Column(JSON, nullable=True)
-    
+
     # ── Lockout & Security ──
     intentos_fallidos = Column(Integer, default=0, nullable=False)
     bloqueado_hasta = Column(DateTime(timezone=True), nullable=True)

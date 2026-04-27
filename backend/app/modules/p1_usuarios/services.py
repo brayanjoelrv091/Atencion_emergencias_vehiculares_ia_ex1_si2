@@ -10,16 +10,15 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.config import settings
-from app.core.security import (
+from app.shared.config import settings
+from app.shared.security import (
     create_access_token,
     generate_reset_token,
     get_password_hash,
     hash_reset_token,
     verify_password,
 )
-from app.core.email import send_reset_email
-from app.modules.p6_auditoria.services import AuditService
+from app.shared.email import send_reset_email
 from app.modules.p1_usuarios.models import (
     TokenRecuperacion,
     TokenRevocado,
@@ -46,6 +45,7 @@ from app.modules.p1_usuarios.schemas import (
 # AUTH SERVICE  (CU1, CU2, CU3, CU4)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class AuthService:
     """Servicio de autenticación y registro."""
 
@@ -61,7 +61,7 @@ class AuthService:
             nombre=payload.nombre,
             email=payload.email,
             hashed_password=get_password_hash(payload.password),
-            rol="cliente",
+            rol=payload.rol,
             esta_activo=True,
         )
         db.add(user)
@@ -99,30 +99,42 @@ class AuthService:
             if user.intentos_fallidos == 3:
                 user.bloqueado_hasta = now + timedelta(minutes=5)
                 db.commit()
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Demasiados intentos. Tu cuenta ha sido bloqueada por 5 minutos por seguridad.")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Demasiados intentos. Tu cuenta ha sido bloqueada por 5 minutos por seguridad.",
+                )
             elif user.intentos_fallidos == 4:
                 user.bloqueado_hasta = now + timedelta(minutes=15)
                 db.commit()
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cuenta bloqueada temporalmente por 15 minutos.")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Cuenta bloqueada temporalmente por 15 minutos.",
+                )
             elif user.intentos_fallidos >= 5:
                 user.esta_activo = False
                 db.commit()
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Límite de intentos excedido. Tu cuenta ha sido bloqueada permanentemente. Por favor, contacta a soporte@rutaigeoproxi.com o a tu administrador para desbloquearla.")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Límite de intentos excedido. Tu cuenta ha sido bloqueada permanentemente. Por favor, contacta a soporte@rutaigeoproxi.com o a tu administrador para desbloquearla.",
+                )
             else:
                 db.commit()
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales incorrectas")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Credenciales incorrectas",
+                )
 
         # Exito: reset intentos
         user.intentos_fallidos = 0
         user.bloqueado_hasta = None
         db.commit()
-        
+
         token, _jti, expire = create_access_token(user_id=user.id, role=user.rol)
         expires_in = max(0, int((expire - now).total_seconds()))
         return TokenResponse(access_token=token, expires_in=expires_in)
 
     @staticmethod
-    def logout(db: Session, token: str, payload: dict) -> None:
+    def logout(db: Session, _token: str, payload: dict) -> None:
         """CU2 — Cierre de sesión (revoca JWT)."""
         jti = payload.get("jti")
         exp_ts = payload.get("exp")
@@ -166,7 +178,7 @@ class AuthService:
         # Enviar email
         try:
             send_reset_email(to_email=user.email, token=raw)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print("Error email: ", e)
 
         debug = raw if settings.DEBUG_RESET_TOKEN else None
@@ -205,6 +217,7 @@ class AuthService:
 # ═══════════════════════════════════════════════════════════════════════
 # USER SERVICE  (CU5, CU6)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class UserService:
     """Servicio de gestión de usuarios (perfil y admin)."""
@@ -317,12 +330,14 @@ class UserService:
     ) -> dict:
         """Cambio de contraseña interno desde el perfil."""
         user = db.query(Usuario).filter(Usuario.id == user_id).first()
-        if not user or not verify_password(payload.current_password, user.hashed_password):
+        if not user or not verify_password(
+            payload.current_password, user.hashed_password
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="La contraseña actual es incorrecta",
             )
-        
+
         user.hashed_password = get_password_hash(payload.new_password)
         db.commit()
         return {"message": "Contraseña actualizada exitosamente"}
@@ -331,6 +346,7 @@ class UserService:
 # ═══════════════════════════════════════════════════════════════════════
 # VEHICLE SERVICE  (CU6)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class VehicleService:
     """Servicio de gestión de vehículos del cliente."""

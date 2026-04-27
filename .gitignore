@@ -7,7 +7,11 @@ Thumbs.db
 
 # Backend (Python)
 backend/venv/
+# Backend (Python)
+backend/venv/
 backend/.env
+# Archivo de credenciales de Firebase (si aplica)
+backend/firebase-credentials.json
 **/__pycache__/
 *.py[cod]
 *$py.class

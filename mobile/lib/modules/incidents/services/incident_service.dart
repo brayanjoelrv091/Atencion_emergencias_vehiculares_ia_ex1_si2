@@ -22,8 +22,8 @@ class IncidentService {
       'titulo': titulo,
       'latitud': latitud.toString(),
       'longitud': longitud.toString(),
-      if (descripcion != null) 'descripcion': descripcion,
-      if (direccion != null) 'direccion': direccion,
+      ...?descripcion == null ? null : {'descripcion': descripcion},
+      ...?direccion == null ? null : {'direccion': direccion},
     };
 
     final files = <MapEntry<String, File>>[];

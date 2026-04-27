@@ -12,6 +12,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config.dart';
+
 class ApiException implements Exception {
   final int statusCode;
   final String message;
@@ -28,7 +30,7 @@ class ApiClient {
   //   Android emulator → 10.0.2.2
   //   iOS simulator / web → localhost
   //   Dispositivo físico → IP de tu máquina en la red local
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  static String get baseUrl => AppConfig.baseUrl;
 
   static const String _tokenKey = 'access_token';
 

@@ -41,9 +41,9 @@ class WorkshopService {
         'direccion': direccion,
         'latitud': latitud,
         'longitud': longitud,
-        if (telefono != null) 'telefono': telefono,
-        if (email != null) 'email': email,
-        if (especialidades != null) 'especialidades': especialidades,
+        ...?telefono == null ? null : {'telefono': telefono},
+        ...?email == null ? null : {'email': email},
+        ...?especialidades == null ? null : {'especialidades': especialidades},
       },
       fromJson: (j) => Workshop.fromJson(j as Map<String, dynamic>),
     );
@@ -73,8 +73,8 @@ class WorkshopService {
       '/workshops/requests/$requestId/status',
       body: {
         'estado': estado,
-        if (notas != null) 'notas': notas,
-        if (tecnicoId != null) 'tecnico_id': tecnicoId,
+        ...?notas == null ? null : {'notas': notas},
+        ...?tecnicoId == null ? null : {'tecnico_id': tecnicoId},
       },
       fromJson: (j) => ServiceRequest.fromJson(j as Map<String, dynamic>),
     );

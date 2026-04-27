@@ -1,0 +1,74 @@
+<div class="payment-container">
+  <div class="neon-card" *ngIf="!exito">
+    <div class="header">
+      <h2><i class="fas fa-credit-card"></i> Pasarela de Pago Seguro</h2>
+      <p>Servicio de Asistencia Vehicular - Incidente #{{pago.incidente_id}}</p>
+    </div>
+
+    <div class="amount-badge">
+      <span class="label">Total a pagar:</span>
+      <span class="value">${{pago.monto | number:'1.2-2'}} USD</span>
+    </div>
+
+    <form (ngSubmit)="confirmarPago()" #paymentForm="ngForm">
+      <div class="row">
+        <div class="form-group">
+          <label>ID del Incidente</label>
+          <input type="number" name="incidenteId" [(ngModel)]="pago.incidente_id" min="1" required>
+        </div>
+        <div class="form-group">
+          <label>Monto (USD)</label>
+          <input type="number" name="monto" [(ngModel)]="pago.monto" min="0.01" step="0.01" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Titular de la Tarjeta</label>
+        <input type="text" name="titular" [(ngModel)]="tarjeta.titular" placeholder="NOMBRE COMPLETO" required>
+      </div>
+
+      <div class="form-group">
+        <label>Número de Tarjeta</label>
+        <div class="input-wrapper">
+          <input type="text" name="numero" [(ngModel)]="tarjeta.numero" placeholder="0000 0000 0000 0000" maxlength="16" required>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" class="card-logo">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <label>Expira</label>
+          <input type="text" name="expira" [(ngModel)]="tarjeta.expira" placeholder="MM/YY" maxlength="5" required>
+        </div>
+        <div class="form-group">
+          <label>CVV</label>
+          <input type="password" name="cvv" [(ngModel)]="tarjeta.cvv" placeholder="***" maxlength="3" required>
+        </div>
+      </div>
+
+      <div class="error-box" *ngIf="error">{{ error }}</div>
+
+      <button type="submit" [disabled]="!paymentForm.valid || procesando" class="btn-pay">
+        <span *ngIf="!procesando">PAGAR AHORA <i class="fas fa-lock"></i></span>
+        <span *ngIf="procesando">PROCESANDO... <i class="fas fa-sync fa-spin"></i></span>
+      </button>
+    </form>
+
+    <div class="footer-info">
+      <i class="fas fa-shield-alt"></i> Sus datos están encriptados con seguridad bancaria AES-256.
+    </div>
+  </div>
+
+  <div class="success-card" *ngIf="exito">
+    <div class="icon-ring">
+      <i class="fas fa-check"></i>
+    </div>
+    <h2>¡PAGO EXITOSO!</h2>
+    <p>La transacción ha sido procesada correctamente.</p>
+    <div class="details">
+      <div class="detail-row"><span>Transacción:</span> <strong>#{{ 'TXN-' + (pago.incidente_id + 458) }}</strong></div>
+      <div class="detail-row"><span>Fecha:</span> <strong>Hoy</strong></div>
+    </div>
+    <button class="btn-done" routerLink="/incidents">Volver a mis incidentes</button>
+  </div>
+</div>

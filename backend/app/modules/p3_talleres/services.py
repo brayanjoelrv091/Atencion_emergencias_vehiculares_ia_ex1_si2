@@ -147,8 +147,11 @@ class WorkshopService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Sin permisos para ver solicitudes de este taller",
             )
-        return (
+        solicitudes = (
             db.query(SolicitudServicio)
+            .options(
+                joinedload(SolicitudServicio.incidente).joinedload(Incidente.clasificacion)
+            )
             .filter(
                 SolicitudServicio.taller_id == workshop_id,
                 SolicitudServicio.estado.in_(["pendiente", "proceso"]),
@@ -157,14 +160,35 @@ class WorkshopService:
             .all()
         )
 
+        result = []
+        for s in solicitudes:
+            item = {
+                "id": s.id,
+                "incidente_id": s.incidente_id,
+                "taller_id": s.taller_id,
+                "tecnico_id": s.tecnico_id,
+                "estado": s.estado,
+                "notas": s.notas,
+                "creado_en": s.creado_en,
+                "actualizado_en": s.actualizado_en,
+                "titulo_incidente": s.incidente.titulo if s.incidente else None,
+                "categoria_incidente": s.incidente.categoria if s.incidente else None,
+                "severidad_incidente": s.incidente.severidad if s.incidente else None,
+                "resumen_ia": s.incidente.clasificacion.razonamiento if s.incidente and s.incidente.clasificacion else None,
+            }
+            result.append(item)
+        return result
+
     # ── CU12: Actualización de estado ──────────────────────────────
 
+    from fastapi import BackgroundTasks
     @staticmethod
     def update_service_status(
         db: Session,
         request_id: int,
         owner_id: int,
         payload: ServiceStatusUpdate,
+        background_tasks: BackgroundTasks = None,
     ) -> SolicitudServicio:
         """
         CU12 — Actualizar estado de solicitud con validación de transiciones.
@@ -220,6 +244,19 @@ class WorkshopService:
 
         db.commit()
         db.refresh(solicitud)
+
+        # CU16 - Notificar al cliente dueño del incidente
+        from app.modules.p5_pagos.services import NotificationService
+        incidente = db.query(Incidente).filter(Incidente.id == solicitud.incidente_id).first()
+        if incidente and background_tasks:
+            background_tasks.add_task(
+                NotificationService.send_push_notification,
+                db=db,
+                user_id=incidente.usuario_id,
+                titulo="Actualización de Servicio",
+                mensaje=f"Tu incidente ha cambiado al estado: {payload.estado.upper()}"
+            )
+
         return solicitud
 
     # ── CU13: Historial de atenciones ──────────────────────────────
@@ -243,7 +280,9 @@ class WorkshopService:
 
         solicitudes = (
             db.query(SolicitudServicio)
-            .options(joinedload(SolicitudServicio.incidente))
+            .options(
+                joinedload(SolicitudServicio.incidente).joinedload(Incidente.clasificacion)
+            )
             .filter(SolicitudServicio.taller_id == workshop_id)
             .order_by(SolicitudServicio.creado_en.desc())
             .all()
@@ -263,6 +302,7 @@ class WorkshopService:
                 "titulo_incidente": s.incidente.titulo if s.incidente else None,
                 "categoria_incidente": s.incidente.categoria if s.incidente else None,
                 "severidad_incidente": s.incidente.severidad if s.incidente else None,
+                "resumen_ia": s.incidente.clasificacion.razonamiento if s.incidente and s.incidente.clasificacion else None,
             }
             result.append(item)
         return result
