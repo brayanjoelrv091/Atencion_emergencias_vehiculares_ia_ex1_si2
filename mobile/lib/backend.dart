@@ -6,7 +6,7 @@ import 'config.dart';
 import 'session.dart';
 
 class Backend {
-  static Uri _uri(String path) => Uri.parse('${apiBaseUrl()}$path');
+  static Uri _uri(String path) => Uri.parse('${AppConfig.baseUrl}$path');
 
   static Future<Map<String, String>> _headers({
     bool jsonBody = false,

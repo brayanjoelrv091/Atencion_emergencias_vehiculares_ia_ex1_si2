@@ -58,6 +58,11 @@ class ServiceRequest {
   final String? notas;
   final String creadoEn;
   final String? actualizadoEn;
+  
+  // Información extendida del incidente (Join)
+  final String? tituloIncidente;
+  final String? categoriaIncidente;
+  final String? severidadIncidente;
 
   const ServiceRequest({
     required this.id,
@@ -68,6 +73,9 @@ class ServiceRequest {
     this.notas,
     required this.creadoEn,
     this.actualizadoEn,
+    this.tituloIncidente,
+    this.categoriaIncidente,
+    this.severidadIncidente,
   });
 
   factory ServiceRequest.fromJson(Map<String, dynamic> j) => ServiceRequest(
@@ -79,6 +87,9 @@ class ServiceRequest {
         notas: j['notas'] as String?,
         creadoEn: j['creado_en'] as String,
         actualizadoEn: j['actualizado_en'] as String?,
+        tituloIncidente: j['titulo_incidente'] as String?,
+        categoriaIncidente: j['categoria_incidente'] as String?,
+        severidadIncidente: j['severidad_incidente'] as String?,
       );
 }
 

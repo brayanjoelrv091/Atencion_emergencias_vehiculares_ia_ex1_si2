@@ -8,7 +8,7 @@
 }
 
 .auth-card {
-  max-width: 450px;
+  max-width: 480px;
   width: 100%;
   text-align: center;
 }
@@ -42,6 +42,14 @@
   letter-spacing: 1px;
 }
 
+.hint-text {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+  opacity: 0.7;
+}
+
 .error-msg-box {
   background: rgba(255, 0, 0, 0.1);
   border-left: 3px solid #f44336;
@@ -64,41 +72,168 @@
 
 .ms-1 { margin-left: 0.5rem; }
 
+/* ── Selector de Rol ── */
 .role-selector {
   margin-top: 0.5rem;
 }
 
 .role-options {
   display: flex;
-  gap: 1.5rem;
+  flex-direction: column;
+  gap: 0.8rem;
   margin-top: 0.5rem;
 }
 
 .role-option {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.7rem;
   cursor: pointer;
-  padding: 0.6rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: 10px;
   transition: all 0.3s ease;
 }
 
-.role-option:hover {
-  background: rgba(0, 255, 255, 0.05);
+.role-option:hover,
+.role-option.selected {
+  background: rgba(0, 242, 255, 0.06);
   border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
 }
 
 .role-option input[type="radio"] {
   accent-color: var(--accent-cyan);
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
+}
+
+.role-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .role-label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.role-desc {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* ── Pantalla de Éxito ── */
+.success-panel {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.success-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.success-msg {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.credentials-box {
+  background: rgba(0, 242, 255, 0.05);
+  border: 1px solid rgba(0, 242, 255, 0.2);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.credentials-box p {
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  margin: 0.4rem 0;
+}
+
+.credentials-box strong {
+  color: var(--accent-cyan);
+}
+
+/* ── Descarga APK ── */
+.download-section {
+  margin-bottom: 1.5rem;
+}
+
+.download-title {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+.btn-download {
+  display: inline-block;
+  background: linear-gradient(135deg, #00c853, #00e676);
+  color: #0A0E1A;
+  padding: 0.8rem 1.8rem;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 200, 83, 0.3);
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(0, 200, 83, 0.5);
+}
+
+.download-hint {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  margin-top: 0.5rem;
+  opacity: 0.7;
+}
+
+/* ── Próximos pasos (Taller) ── */
+.next-steps {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.steps-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 0.5rem;
+}
+
+.steps-list li {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-sm {
+  font-size: 0.85rem !important;
+  padding: 0.6rem 1.5rem !important;
+  display: inline-block;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

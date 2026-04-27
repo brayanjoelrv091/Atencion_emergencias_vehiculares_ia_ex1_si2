@@ -226,11 +226,11 @@ class _WorkshopCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      if (workshop.especialidades.isNotEmpty) ...[
+                      if (workshop.especialidades != null && workshop.especialidades!.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Wrap(
                           spacing: 6,
-                          children: workshop.especialidades
+                          children: workshop.especialidades!
                               .take(3)
                               .map((e) => _Chip(e))
                               .toList(),
